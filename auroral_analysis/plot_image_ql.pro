@@ -45,7 +45,7 @@ pro plot_image_ql, $
   save_png = save_png, $ ; save image as png
   ps = ps, $ ; output ps
   out_dir = out_dir, $ ; output directory
-  win = win, $ ; window to plot
+  win = win ; window to plot
 
   if keyword_set(ns_scl) then ns_scl = ns_scl else ns_scl = 1
   if keyword_set(l_qt) then l_qt = l_qt else l_qt = 0.1
@@ -215,4 +215,10 @@ pro plot_image_ql, $
 
 end
 
+;main
+fn = "D:\data\IMAGE_FUV\2001\WIC\016\wic20010161609.idl"
+plot_image_ql, fn
+
+
+end
 
