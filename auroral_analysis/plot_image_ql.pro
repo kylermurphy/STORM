@@ -182,17 +182,6 @@ pro plot_image_ql, $
   loadct,0,/silent
   map_grid, londel=15, latdel=10,color=28
   
-  loadct, 10
-  if boundary eq 1 then begin
-    lat_bd_p = smooth(lat_bd_p,5,/edge_wrap)
-    plots, [lon_bd,lon_bd[0]], [lat_bd_p,lat_bd_p[0]], color = 191, /continue
-    plots, [lon_bd,lon_bd[0]], [lat_bd_p,lat_bd_p[0]], color = 191, psym = sym(1)
-  
-    lat_bd_e = smooth(lat_bd_e,2,/edge_wrap)
-    plots, [lon_bd,lon_bd[0]], [lat_bd_e,lat_bd_e[0]], color = 191, /continue
-    plots, [lon_bd,lon_bd[0]], [lat_bd_e,lat_bd_e[0]], color = 191, psym = sym(1)
-  endif
-  
   ;plot color bar
   p0 = convert_coord(!p.clip[0],!p.clip[1], /device, /to_normal)
   p1 = convert_coord(!p.clip[2],!p.clip[3], /device, /to_normal)
