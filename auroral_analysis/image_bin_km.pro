@@ -1,18 +1,34 @@
-function image_bin, $ 
+function image_bin_km, $ 
   fn, $ ; file to load
   lat_res = lat_res, $ ; km resolution in the latitude direction
   lon_res = lon_res, $ ; km resolution in the longitude direction
   lat_min = lat_min, $ ; minimum latitude for grid
   hgt = hgt, $ ; height of the aurora
-  clog = clog ; log before plotting
+  im_min = im_min, $ ; min intensity to plot
+  im_max = im_max, $ ; max intensity to plot
+  im_plot = im_plot, $ ; plot the imate
+  clog = clog, $ ; log before plotting
+  save_png = save_png, $ ; output png
+  out_dir = out_dir ; 
   
   
-  if keyword_set(lat_res) then lat_res = lat_res else lat_res = 100.
-  if keyword_set(lon_res) then lon_res = lon_res else lon_res = 100.
-  if keyword_set(lat_min) then lat_min = lat_min else lat_min = 45.
-  if keyword_set(hgt) then hgt = hgt else hgt = 110 
-  if keyword_set(clog) then clog = 1 else clog = 0
+  if keyword_set(lat_res) then lat_res=lat_res else lat_res=100.
+  if keyword_set(lon_res) then lon_res=lon_res else lon_res=100.
+  if keyword_set(lat_min) then lat_min=lat_min else lat_min=45.
+  if keyword_set(hgt) then hgt=hgt else hgt=110
+  if keyword_set(im_plot) then im_plot=1 else im_plot=0 
+  if keyword_set(clog) then clog=1 else clog=0
+  if keyword_set(save_png) then save_png=1 else save_png=0
+  if keyword_set(out_dir) then out_dir=out_dir else out_dir='D:\data\IMAGE_FUV\plots\'
+
   
+  if keyword_set(wf) then wf=wf else wf=0.05
+  if keyword_set(cw) then cw=cw else cw=0.03
+  
+  
+  fixplot
+  ct = 8
+  ct = 56
   ; radius of earth
   re = 6378.14
   h_map = re + hgt
@@ -83,8 +99,6 @@ function image_bin, $
   lat_vert = list()
   lon_vert = list()
   
-  im_max = -1 
-  im_min = max(im)+1000
   
   for i=0L, lat_arr.length-2 do begin
     ; get pixel vertices
@@ -115,43 +129,74 @@ function image_bin, $
       lon_mask[*] = !values.f_nan
       lon_mask[gd_lon] = 1
       
-      if lon_c lt 1 then im_val = !values.f_nan else im_val = mean(lon_mask*lat_mask*im,/nan)
+      if lon_c lt 1 then im_val = !values.f_nan else im_val = total(lon_mask*lat_mask*im,/nan)
       im_arr[j] = im_val
       
       im_flat.Add, im_val
       lat_vert.Add, lat_v
       lon_vert.Add, lon_v
-      
-
     endfor
   endfor
   
-
+  
   im_flat = im_flat.ToArray()
+  if size(im_flat,/type) eq 0 then return,0
+  im_sort = im_flat[sort(im_flat,/l64)]
+  im_sort = im_sort[where(im_sort gt 0)]
   im_col = im_flat
-  im_min = min(im_flat)
-  im_max = max(im_flat)
+  if keyword_set(im_min) then im_min=im_min else begin
+    im_min=im_sort[im_sort.length*0.1]
+  endelse
+  if keyword_set(im_max) then im_max=im_max else begin
+    im_max=im_sort[im_sort.length*0.85]
+  endelse
+  if im_max - 100 lt im_min then return, 0
+  if finite(im_max) eq 0 or finite(im_min) eq 0 then return, 0
   im_col[where(im_flat le im_min or finite(im_flat) ne 1)] = im_min
   im_col[where(im_flat ge im_max)] = im_max
   if clog eq 1 then im_col = alog10(im_col)
   
+  im_pc = where(im_flat gt 0 and finite(im_flat) eq 1, im_c)
+  im_pc = 1.0*im_c/n_elements(im_flat)
+  
   im_col = bytscl(im_col,/nan)
   
-  window, 2, xsize = 500, ysize = 500
-  !p.multi  = [0,1,1]
-  !x.omargin = [15,15]
-  loadct,0
-  xyouts, 0.5,0.85, ts, /normal, alignment=0.5, charsize=1.5
-  map_set, 90, 0, 180, /azimuthal,/isotropic, limit=[lat_min,0,90,360],/noerase
-  ; plot circles for each pixel
-  loadct, 8
+  if im_plot eq 1 then begin
+    window, 2, xsize = 600, ysize = 600
+    !p.multi  = [0,1,1]
+    !x.omargin = [15,15]
+    loadct,0
+    xyouts, 0.5,0.85, ts, /normal, alignment=0.5, charsize=1.5
+    map_set, 90, 0, 180, /azimuthal,/isotropic, limit=[lat_min,0,90,360],/noerase
+    ; plot circles for each pixel
+    loadct, ct
+    
+    im_fin = finite(im_flat)
+    for i=0L, im_flat.length-1 do begin
+      if im_fin[i] eq 0 then continue
+      polyfill, lon_vert[i], lat_vert[i], color = im_col[i]
+    endfor
+    
+    loadct,25,/silent
+    map_grid, londel=15, latdel=10, label=1, thick=2, color=42, charsize=1.5, charthick=2.
+    if keyword_set(rev_ct) then rev_ct = 1
+    ;plot color bar
+    p0 = convert_coord(!p.clip[0],!p.clip[1], /device, /to_normal)
+    p1 = convert_coord(!p.clip[2],!p.clip[3], /device, /to_normal)
   
-  for i=0L, im_flat.length-1 do begin
-    polyfill, lon_vert[i], lat_vert[i], color = im_col[i]
-  endfor
+    width = (p1[0]-p0[0])*wf
+    cwidth = (p1[0]-p0[0])*cw
   
-  stop
-  return, 0
+    position = [p1[0]+width,p0[1],p1[0]+width+cwidth,p1[1]]
+    colorbar_krm,position,im_min,im_max,ct, /vertical, /right, c_title = 'Raylieghs', log=clog, tl = -0.3, rev_ct = rev_ct, ct_file=ct_file
+    
+    if save_png eq 1 then begin
+      makepng,out_dir+time_string(ts, tformat='YYYYMMDD_hhmmss')
+    endif
+  endif
+  
+  return, {name:'binned image', im:im_flat, lon_ver:lon_vert, lat_vert:lat_vert, $
+           im_max:im_max, im_min:im_min, im_pc:im_pc}
 end
 
 
@@ -160,10 +205,26 @@ end
 ;
 
 fn = 'D:\data\IMAGE_FUV\2001\WIC\016\wic20010160013.idl'
-fn = "D:\data\IMAGE_FUV\2001\WIC\016\wic20010161609.idl"
+;fn = "D:\data\IMAGE_FUV\2001\WIC\016\wic20010161609.idl"
 
-a = image_bin(fn,clog=1)
+im = image_bin_km(fn,/im_plot)
+stop
 
+out_f = 'D:\data\IMAGE_FUV\out_dat.txt'
+fn = file_search('D:\data\IMAGE_FUV\2001\WIC\*\*.idl')
+pc = fltarr(fn.length)
+openw,outlun,out_f,/get_lun,/append
 
+for i=7593L, fn.length-1 do begin
+  im = image_bin_km(fn[i],clog=1,save_png=1)
+  if size(im,/type) ne 8 then continue
+  gd = where(im.im gt 0,c)
+  pc[i] = 1.0*c/n_elements(im.im)
+  
+  printf, outlun, fn[i]+', '+string(pc[i],format='(F0.2)')
+endfor
+
+close,outlun
+free_lun,outlun
 
 end
