@@ -6,7 +6,8 @@ function image_bin_km, $
   hgt = hgt, $ ; height of the aurora
   im_min = im_min, $ ; min intensity to plot
   im_max = im_max, $ ; max intensity to plot
-  im_plot = im_plot, $ ; plot the imate
+  ns_scl = ns_scl, $ ; scale data to the night side
+  im_plot = im_plot, $ ; plot the image
   clog = clog, $ ; log before plotting
   save_png = save_png, $ ; output png
   out_dir = out_dir ; 
@@ -37,6 +38,14 @@ function image_bin_km, $
   restore, fn
   td = time_double(imageinfo.epoch, /epoch)
   ts = time_string(td)
+  
+  mlt_mid = min(abs(imageinfo.mlt))
+  mlon_mid = imageinfo.mlon[!C]
+  glon_mid = imageinfo.glon[!C]
+  
+  mlt_arr = imageinfo.mlt
+  bd = where(mlt_arr lt 0,c)
+  if c gt 0 then mlt_arr[bd] = !values.f_nan
   
   ; find 
   sm=fltarr(1,3)
@@ -98,7 +107,7 @@ function image_bin_km, $
   im_flat = list()
   lat_vert = list()
   lon_vert = list()
-  
+  mlt_pix = list()
   
   for i=0L, lat_arr.length-2 do begin
     ; get pixel vertices
@@ -135,12 +144,19 @@ function image_bin_km, $
       im_flat.Add, im_val
       lat_vert.Add, lat_v
       lon_vert.Add, lon_v
+      mlt_pix.Add, mean(lon_mask*lat_mask*mlt_arr,/nan)
     endfor
   endfor
   
   
   im_flat = im_flat.ToArray()
+  lon_vert = lon_vert.ToArray()
+  lat_vert = lat_vert.ToArray()
+  
   if size(im_flat,/type) eq 0 then return,0
+  if im_max - 100 lt im_min then return, 0
+  if finite(im_max) eq 0 or finite(im_min) eq 0 then return, 0
+  
   im_sort = im_flat[sort(im_flat,/l64)]
   im_sort = im_sort[where(im_sort gt 0)]
   im_col = im_flat
@@ -150,11 +166,17 @@ function image_bin_km, $
   if keyword_set(im_max) then im_max=im_max else begin
     im_max=im_sort[im_sort.length*0.85]
   endelse
-  if im_max - 100 lt im_min then return, 0
-  if finite(im_max) eq 0 or finite(im_min) eq 0 then return, 0
-  im_col[where(im_flat le im_min or finite(im_flat) ne 1)] = im_min
-  im_col[where(im_flat ge im_max)] = im_max
-  if clog eq 1 then im_col = alog10(im_col)
+
+  if keyword_set(ns_scl) then begin
+    ns_dat = where(mlt_pix gt 16 and ml_pix lt 6, ns_c)
+    if ns_c lt 1 then break
+
+    im_ns = im_flat[ns_dat]
+    im_ns = im_ns[sort(im_ns,/l64)]
+
+    im_min = im_ns[im_ns.length*0.1]
+    im_max = im_ns[im_ns.length*0.9]
+  endif
   
   im_pc = where(im_flat gt 0 and finite(im_flat) eq 1, im_c)
   im_pc = 1.0*im_c/n_elements(im_flat)
@@ -174,7 +196,7 @@ function image_bin_km, $
     im_fin = finite(im_flat)
     for i=0L, im_flat.length-1 do begin
       if im_fin[i] eq 0 then continue
-      polyfill, lon_vert[i], lat_vert[i], color = im_col[i]
+      polyfill, lon_vert[i,*], lat_vert[i,*], color = im_col[i]
     endfor
     
     loadct,25,/silent
@@ -195,8 +217,11 @@ function image_bin_km, $
     endif
   endif
   
-  return, {name:'binned image', im:im_flat, lon_ver:lon_vert, lat_vert:lat_vert, $
-           im_max:im_max, im_min:im_min, im_pc:im_pc}
+  return, {name:'binned image in km pixels', lat_min:lat_min, $
+           lat_res:lat_res, lon_res:lon_res,  $ 
+           im:im_flat, lon_ver:lon_vert, lat_vert:lat_vert, mlt_pix:mlt_pix.ToArray(), t:ts, $
+           im_max:im_max, im_min:im_min, im_pc:im_pc, $
+           mlt_mid:mlt_mid, mlon_mid:mlon_mid, glon_mid:glon_mid}
 end
 
 

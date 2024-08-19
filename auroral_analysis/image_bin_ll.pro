@@ -9,7 +9,8 @@ function image_bin_ll, $
   hgt = hgt, $ ; height of the aurora
   im_min = im_min, $ ; min intensity to plot
   im_max = im_max, $ ; max intensity to plot
-  im_plot = im_plot, $ ; plot the imate
+  ns_scl = ns_scl, $ ; scale data to the night side
+  im_plot = im_plot, $ ; plot the image
   clog = clog, $ ; log before plotting
   save_png = save_png, $ ; output png
   out_dir = out_dir ; 
@@ -41,16 +42,29 @@ function image_bin_ll, $
   if mag eq 1 then begin
     im_lat = imageinfo.mlat
     im_lon = imageinfo.mlon
+    coord = 'geomagnetic'
   endif else if geo eq 1 then begin
     im_lat = imageinfo.glat
     im_lon = imageinfo.glon
+    coord = 'geographic'
   endif else if mag eq 1 then begin
     im_lat = imageinfo.mlat
     im_lon = imageinfo.mlt * 15
+    coord = 'geomagnetic/mlt (mlt converted to 0-360 degrees mlt*15'
   endif else begin
     im_lat = imageinfo.mlat
-    im_lon = imageinfo.mlon    
+    im_lon = imageinfo.mlon
+    coord = 'geomagnetic'  
   endelse
+  
+  mlt_arr = imageinfo.mlt
+  bd = where(mlt_arr lt 0,c)
+  if c gt 0 then mlt_arr[bd] = !values.f_nan
+
+  
+  mlt_mid = min(abs(imageinfo.mlt))
+  mlon_mid = imageinfo.mlon[!C]
+  glon_mid = imageinfo.glon[!C]
   
   nlat = (90.-lat_min)/lat_res
   lat_arr = findgen(nlat+1)*lat_res
@@ -62,6 +76,11 @@ function image_bin_ll, $
   im_arr = fltarr(nlon,nlat)
   lon_mask =  fltarr(im.dim)
   lat_mask = lon_mask
+  
+  im_flat = list()
+  lat_vert = list()
+  lon_vert = list()
+  mlt_pix = list()
   
   for j=0L, nlon-1 do begin
       lon_vec = [lon_arr[j],lon_arr[j],lon_arr[j+1],lon_arr[j+1],lon_arr[j]]
@@ -81,16 +100,50 @@ function image_bin_ll, $
       lat_mask[*] = !values.f_nan
       lat_mask[gd_lat] = 1
       
-      im_arr[j,i] = total(lon_mask*lat_mask*im,/nan)
-      
+      im_val = total(lon_mask*lat_mask*im,/nan)
+      im_arr[j,i] = im_val
+      im_flat.Add, im_val
+      lat_vert.Add, lat_vec
+      lon_vert.Add, lon_vec
+      mlt_pix.Add, mean(lon_mask*lat_mask*mlt_arr,/nan)
       ;stop
     endfor
   endfor
 
-  stop
+  if size(im_flat,/type) eq 0 then return,0
+  if im_max - 100 lt im_min then return, 0
+  if finite(im_max) eq 0 or finite(im_min) eq 0 then return, 0
+
+  im_sort = im_flat[sort(im_flat,/l64)]
+  im_sort = im_sort[where(im_sort gt 0)]
+  im_col = im_flat
+  if keyword_set(im_min) then im_min=im_min else begin
+    im_min=im_sort[im_sort.length*0.1]
+  endelse
   
-  stop
-  return,0  
+  if keyword_set(im_max) then im_max=im_max else begin
+    im_max=im_sort[im_sort.length*0.85]
+  endelse
+  
+  if keyword_set(ns_scl) then begin
+    ns_dat = where(mlt_pix gt 16 and ml_pix lt 6, ns_c)
+    if ns_c lt 1 then break
+    
+    im_ns = im_flat[ns_dat]
+    im_ns = im_ns[sort(im_ns,/l64)]
+    
+    im_min = im_ns[im_ns.length*0.1]
+    im_max = im_ns[im_ns.length*0.9]    
+  endif
+  
+
+  return, {name:'lat/lon binned image', coordinate:coord, lat_min:lat_min, $
+           lat_res:lat_res, lon_res:lon_res,  $ 
+           im:im_arr, lat_arr:lat_arr, lon_arr:lon_arr, $
+           im_flat:im_flat.ToArray(), lat_vert:lat_vert.ToArray(), $
+           lon_vert:lon_vert.ToArray(), mlt_pix:mlt_pix.ToArray(), t:ts, $ 
+           im_max:im_max, im_min:im_min, $
+           mlt_mid:mlt_mid, mlon_mid:mlon_mid, glon_mid:glon_mid}
 end
 
 
