@@ -57,10 +57,17 @@ function image_bin_ll, $
     coord = 'geomagnetic'  
   endelse
   
+  ; convert longitude array to 0-360
+  bd = where(im_lon lt -1000, bd_c)
+  if bd_c gt 1 then im_lon[bd] = !values.f_nan
+  bd = where(im_lon ge -180 and im_lon lt 0, bd_c)
+  if bd_c gt 1 then im_lon[bd] = 360+im_lon[bd]
+  
   mlt_arr = imageinfo.mlt
   bd = where(mlt_arr lt 0,c)
   if c gt 0 then mlt_arr[bd] = !values.f_nan
 
+  ; fix longitude
   
   mlt_mid = min(abs(imageinfo.mlt))
   mlon_mid = imageinfo.mlon[!C]
@@ -106,13 +113,11 @@ function image_bin_ll, $
       lat_vert.Add, lat_vec
       lon_vert.Add, lon_vec
       mlt_pix.Add, mean(lon_mask*lat_mask*mlt_arr,/nan)
-      ;stop
     endfor
   endfor
 
+  im_flat = im_flat.ToArray()
   if size(im_flat,/type) eq 0 then return,0
-  if im_max - 100 lt im_min then return, 0
-  if finite(im_max) eq 0 or finite(im_min) eq 0 then return, 0
 
   im_sort = im_flat[sort(im_flat,/l64)]
   im_sort = im_sort[where(im_sort gt 0)]
@@ -127,20 +132,25 @@ function image_bin_ll, $
   
   if keyword_set(ns_scl) then begin
     ns_dat = where(mlt_pix gt 16 and ml_pix lt 6, ns_c)
-    if ns_c lt 1 then break
-    
-    im_ns = im_flat[ns_dat]
-    im_ns = im_ns[sort(im_ns,/l64)]
-    
-    im_min = im_ns[im_ns.length*0.1]
-    im_max = im_ns[im_ns.length*0.9]    
+    if ns_c lt 1 then begin  
+      im_ns = im_flat[ns_dat]
+      im_ns = im_ns[sort(im_ns,/l64)]
+      
+      im_min = im_ns[im_ns.length*0.1]
+      im_max = im_ns[im_ns.length*0.9]
+    endif else begin
+      im_min=im_sort[im_sort.length*0.1]
+      im_max=im_sort[im_sort.length*0.85]
+    endelse     
   endif
   
+  if im_max - 100 lt im_min then return, 0
+  if finite(im_max) eq 0 or finite(im_min) eq 0 then return, 0
 
   return, {name:'lat/lon binned image', coordinate:coord, lat_min:lat_min, $
            lat_res:lat_res, lon_res:lon_res,  $ 
            im:im_arr, lat_arr:lat_arr, lon_arr:lon_arr, $
-           im_flat:im_flat.ToArray(), lat_vert:lat_vert.ToArray(), $
+           im_flat:im_flat, lat_vert:lat_vert.ToArray(), $
            lon_vert:lon_vert.ToArray(), mlt_pix:mlt_pix.ToArray(), t:ts, $ 
            im_max:im_max, im_min:im_min, $
            mlt_mid:mlt_mid, mlon_mid:mlon_mid, glon_mid:glon_mid}
