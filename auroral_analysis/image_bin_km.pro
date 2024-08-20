@@ -94,7 +94,12 @@ function image_bin_km, $
   im_lat = imageinfo.glat
   im_lon = imageinfo.glon
   bd_lon = where(im_lon lt 0, c)
-  if c gt 0 then im_lon[bd_lon] = !values.f_nan
+  ; convert longitude array to 0-360
+  ; and rotate so sun is top
+  bd = where(im_lon lt -1000, bd_c)
+  if bd_c gt 1 then im_lon[bd] = !values.f_nan
+  bd = where(im_lon ge -180 and im_lon lt 0, bd_c)
+  if bd_c gt 1 then im_lon[bd] = 360+im_lon[bd]
   im_lon = im_lon-sm_lon
   bd_lon = where(im_lon lt 0, c)
   if c gt 0 then im_lon[bd_lon] = 360+im_lon[bd_lon]
@@ -154,8 +159,8 @@ function image_bin_km, $
   lat_vert = lat_vert.ToArray()
   
   if size(im_flat,/type) eq 0 then return,0
-  if im_max - 100 lt im_min then return, 0
-  if finite(im_max) eq 0 or finite(im_min) eq 0 then return, 0
+  if max(im_flat) eq 0 then return, 0
+  if finite(max(im_flat, min=im_min)) eq 0 or finite(im_min) eq 0 then return, 0
   
   im_sort = im_flat[sort(im_flat,/l64)]
   im_sort = im_sort[where(im_sort gt 0)]
@@ -169,13 +174,16 @@ function image_bin_km, $
 
   if keyword_set(ns_scl) then begin
     ns_dat = where(mlt_pix gt 16 and ml_pix lt 6, ns_c)
-    if ns_c lt 1 then break
-
-    im_ns = im_flat[ns_dat]
-    im_ns = im_ns[sort(im_ns,/l64)]
-
-    im_min = im_ns[im_ns.length*0.1]
-    im_max = im_ns[im_ns.length*0.9]
+    if ns_c lt 1 then begin  
+      im_ns = im_flat[ns_dat]
+      im_ns = im_ns[sort(im_ns,/l64)]
+      
+      im_min = im_ns[im_ns.length*0.1]
+      im_max = im_ns[im_ns.length*0.9]
+    endif else begin
+      im_min=im_sort[im_sort.length*0.1]
+      im_max=im_sort[im_sort.length*0.85]
+    endelse     
   endif
   
   im_pc = where(im_flat gt 0 and finite(im_flat) eq 1, im_c)
@@ -230,7 +238,7 @@ end
 ;
 
 fn = 'D:\data\IMAGE_FUV\2001\WIC\016\wic20010160013.idl'
-;fn = "D:\data\IMAGE_FUV\2001\WIC\016\wic20010161609.idl"
+fn = "D:\data\IMAGE_FUV\2001\WIC\016\wic20010161609.idl"
 
 im = image_bin_km(fn,/im_plot)
 stop
