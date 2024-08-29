@@ -59,10 +59,7 @@ function image_bin_km, $
   ;restore previous verbosity
   dprint,setdebug=gd
   
-  ; when using mapset azimuth
-  ; longitude is x and latitude is y
-  sm_lon = atan(geo[1],geo[0])/!dtor
-  if sm_lon lt 0 then sm_lon = 360+sm_lon
+  sm_lon = geo[0]
   
   ; setup latitude grid
   ; using arc legnth and lat_res
@@ -91,18 +88,14 @@ function image_bin_km, $
   
   ; construct the new binned image
   im = imageinfo.image
-  im_lat = imageinfo.glat
-  im_lon = imageinfo.glon
-  bd_lon = where(im_lon lt 0, c)
+  im_lat = imageinfo.mlat
+  im_lon = imageinfo.mlon
   ; convert longitude array to 0-360
   ; and rotate so sun is top
   bd = where(im_lon lt -1000, bd_c)
   if bd_c gt 1 then im_lon[bd] = !values.f_nan
   bd = where(im_lon ge -180 and im_lon lt 0, bd_c)
   if bd_c gt 1 then im_lon[bd] = 360+im_lon[bd]
-  im_lon = im_lon-sm_lon
-  bd_lon = where(im_lon lt 0, c)
-  if c gt 0 then im_lon[bd_lon] = 360+im_lon[bd_lon]
   
   
   ; setup values to store
@@ -131,7 +124,6 @@ function image_bin_km, $
     ; a mask where these values are in the image
     ; and combine into new image
     lon_vals = lon_arr[i]
-    im_arr = fltarr(lon_vals.length-1)
     
     for j=0L, lon_vals.length-2 do begin
       ; get pixel vertices
@@ -143,8 +135,7 @@ function image_bin_km, $
       lon_mask[*] = !values.f_nan
       lon_mask[gd_lon] = 1
       
-      if lon_c lt 1 then im_val = !values.f_nan else im_val = total(lon_mask*lat_mask*im,/nan)
-      im_arr[j] = im_val
+      if lon_c lt 1 then im_val = !values.f_nan else im_val = mean(lon_mask*lat_mask*im,/nan)
       
       im_flat.Add, im_val
       lat_vert.Add, lat_v
@@ -176,12 +167,12 @@ function image_bin_km, $
 
     ; get the image intesnity from the nightside
   ns_dat = where(mlt_pix gt 16 or mlt_pix lt 6, ns_c)
-  if ns_c lt 1 then begin
+  if ns_c gt 1 then begin
     im_ns = im_flat[ns_dat]
     im_ns = im_ns[sort(im_ns,/l64)]
 
     ns_min = im_ns[im_ns.length*0.1]
-    ns_max = im_ns[im_ns.length*0.9]
+    ns_max = im_ns[im_ns.length*0.95]
   endif else begin
     ns_min = im_min
     ns_max = im_max
@@ -239,9 +230,9 @@ function image_bin_km, $
   
   return, {name:'binned image in km pixels', lat_min:lat_min, $
            lat_res:lat_res, lon_res:lon_res,  $ 
-           im:im_flat, lon_ver:lon_vert, lat_vert:lat_vert, mlt_pix:mlt_pix, t:ts, $
+           im_flat:im_flat, lon_vert:lon_vert, lat_vert:lat_vert, mlt_pix:mlt_pix, t:ts, $
            im_max:im_max, im_min:im_min, im_pc:im_pc, ns_min:ns_min, ns_max:ns_max, $ $
-           mlt_mid:mlt_mid, mlon_mid:mlon_mid, glon_mid:glon_mid}
+           mlt_mid:mlt_mid, mlon_mid:mlon_mid, glon_mid:glon_mid, sm_lon:sm_lon}
 end
 
 
