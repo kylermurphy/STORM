@@ -102,7 +102,7 @@ function image_bin_ll, $
       lat_vec = [lat_arr[i],lat_arr[i+1],lat_arr[i+1],lat_arr[i],lat_arr[i]]
       
       gd_lat = where(im_lat gt lat_arr[i] and im_lat le lat_arr[i+1], lat_c)
-      if lat_c lt 1 then cotinue
+      if lat_c lt 1 then continue
       
       lat_mask[*] = !values.f_nan
       lat_mask[gd_lat] = 1
@@ -117,6 +117,7 @@ function image_bin_ll, $
   endfor
 
   im_flat = im_flat.ToArray()
+  mlt_pix = mlt_pix.ToArray()
   if size(im_flat,/type) eq 0 then return,0
 
   im_sort = im_flat[sort(im_flat,/l64)]
@@ -130,19 +131,28 @@ function image_bin_ll, $
     im_max=im_sort[im_sort.length*0.85]
   endelse
   
+  ; get the image intesnity from the nightside
+  ns_dat = where(mlt_pix gt 16 or mlt_pix lt 6, ns_c)
+  if ns_c lt 1 then begin
+    im_ns = im_flat[ns_dat]
+    im_ns = im_ns[sort(im_ns,/l64)]
+
+    ns_min = im_ns[im_ns.length*0.1]
+    ns_max = im_ns[im_ns.length*0.9]
+  endif else begin
+    ns_min = im_min
+    ns_max = im_max
+  endelse
+  
+  
   if keyword_set(ns_scl) then begin
-    ns_dat = where(mlt_pix gt 16 and ml_pix lt 6, ns_c)
-    if ns_c lt 1 then begin  
-      im_ns = im_flat[ns_dat]
-      im_ns = im_ns[sort(im_ns,/l64)]
-      
-      im_min = im_ns[im_ns.length*0.1]
-      im_max = im_ns[im_ns.length*0.9]
-    endif else begin
-      im_min=im_sort[im_sort.length*0.1]
-      im_max=im_sort[im_sort.length*0.85]
-    endelse     
-  endif
+    plot_min=ns_min
+    plot_max=ns_max
+  endif else begin
+    plot_min=im_min
+    plot_max=im_max
+  endelse
+
   
   if im_max - 100 lt im_min then return, 0
   if finite(im_max) eq 0 or finite(im_min) eq 0 then return, 0
@@ -151,8 +161,8 @@ function image_bin_ll, $
            lat_res:lat_res, lon_res:lon_res,  $ 
            im:im_arr, lat_arr:lat_arr, lon_arr:lon_arr, $
            im_flat:im_flat, lat_vert:lat_vert.ToArray(), $
-           lon_vert:lon_vert.ToArray(), mlt_pix:mlt_pix.ToArray(), t:ts, $ 
-           im_max:im_max, im_min:im_min, $
+           lon_vert:lon_vert.ToArray(), mlt_pix:mlt_pix, t:ts, $ 
+           im_max:im_max, im_min:im_min, ns_min=ns_min, ns_max=ns_max, $
            mlt_mid:mlt_mid, mlon_mid:mlon_mid, glon_mid:glon_mid}
 end
 
