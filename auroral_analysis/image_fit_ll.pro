@@ -61,6 +61,8 @@ end
 
 fn = 'D:\data\IMAGE_FUV\2001\WIC\016\wic20010161609.idl'
 fn = "D:\data\IMAGE_FUV\2001\WIC\001\wic20010010351.idl"
+fn = "D:\data\IMAGE_FUV\2001\WIC\015\wic20010151622.idl"
+fn = "D:\data\IMAGE_FUV\2001\WIC\015\wic20010151328.idl"
 
 im = image_bin_ll(fn)
 imf = image_fit_ll(im.im, im.lon_arr, im.lat_arr, /sun_rm)
