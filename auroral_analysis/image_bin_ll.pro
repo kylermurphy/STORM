@@ -108,6 +108,7 @@ function image_bin_ll, $
       lat_mask[gd_lat] = 1
       
       im_val = total(lon_mask*lat_mask*im,/nan)
+      im_val = mean(lon_mask*lat_mask*im,/nan)
       im_arr[j,i] = im_val
       im_flat.Add, im_val
       lat_vert.Add, lat_vec
@@ -132,13 +133,14 @@ function image_bin_ll, $
   endelse
   
   ; get the image intesnity from the nightside
-  ns_dat = where(mlt_pix gt 16 or mlt_pix lt 6, ns_c)
-  if ns_c lt 1 then begin
+  ns_dat = where((mlt_pix gt 16 or mlt_pix lt 6) $  
+                 and finite(im_flat) eq 1, ns_c)
+  if ns_c gt 1 then begin
     im_ns = im_flat[ns_dat]
     im_ns = im_ns[sort(im_ns,/l64)]
 
     ns_min = im_ns[im_ns.length*0.1]
-    ns_max = im_ns[im_ns.length*0.9]
+    ns_max = im_ns[im_ns.length*0.95]
   endif else begin
     ns_min = im_min
     ns_max = im_max
@@ -162,14 +164,14 @@ function image_bin_ll, $
            im:im_arr, lat_arr:lat_arr, lon_arr:lon_arr, $
            im_flat:im_flat, lat_vert:lat_vert.ToArray(), $
            lon_vert:lon_vert.ToArray(), mlt_pix:mlt_pix, t:ts, $ 
-           im_max:im_max, im_min:im_min, ns_min=ns_min, ns_max=ns_max, $
-           mlt_mid:mlt_mid, mlon_mid:mlon_mid, glon_mid:glon_mid}
+           im_max:im_max, im_min:im_min, ns_min:ns_min, ns_max:ns_max, $
+           mlt_mid:mlt_mid, mlon_mid:mlon_mid, glon_mid:glon_mid, coord:coord}
 end
 
 
 ; main
 
-fn = 'D:\data\IMAGE_FUV\2001\WIC\016\wic20010160013.idl'
+fn = "D:\data\IMAGE_FUV\2001\WIC\015\wic20010150809.idl"
 
 im = image_bin_ll(fn)
 
