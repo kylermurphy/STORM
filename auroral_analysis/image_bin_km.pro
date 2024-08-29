@@ -157,14 +157,16 @@ function image_bin_km, $
   im_flat = im_flat.ToArray()
   lon_vert = lon_vert.ToArray()
   lat_vert = lat_vert.ToArray()
+  mlt_pix = mlt_pix.ToArray()
   
   if size(im_flat,/type) eq 0 then return,0
   if max(im_flat) eq 0 then return, 0
-  if finite(max(im_flat, min=im_min)) eq 0 or finite(im_min) eq 0 then return, 0
+  if finite(max(im_flat, min=f_min)) eq 0 or finite(f_min) eq 0 then return, 0
   
   im_sort = im_flat[sort(im_flat,/l64)]
   im_sort = im_sort[where(im_sort gt 0)]
   im_col = im_flat
+  
   if keyword_set(im_min) then im_min=im_min else begin
     im_min=im_sort[im_sort.length*0.1]
   endelse
@@ -172,27 +174,37 @@ function image_bin_km, $
     im_max=im_sort[im_sort.length*0.85]
   endelse
 
+    ; get the image intesnity from the nightside
+  ns_dat = where(mlt_pix gt 16 or mlt_pix lt 6, ns_c)
+  if ns_c lt 1 then begin
+    im_ns = im_flat[ns_dat]
+    im_ns = im_ns[sort(im_ns,/l64)]
+
+    ns_min = im_ns[im_ns.length*0.1]
+    ns_max = im_ns[im_ns.length*0.9]
+  endif else begin
+    ns_min = im_min
+    ns_max = im_max
+  endelse
+  
+  
   if keyword_set(ns_scl) then begin
-    ns_dat = where(mlt_pix gt 16 and ml_pix lt 6, ns_c)
-    if ns_c lt 1 then begin  
-      im_ns = im_flat[ns_dat]
-      im_ns = im_ns[sort(im_ns,/l64)]
-      
-      im_min = im_ns[im_ns.length*0.1]
-      im_max = im_ns[im_ns.length*0.9]
-    endif else begin
-      im_min=im_sort[im_sort.length*0.1]
-      im_max=im_sort[im_sort.length*0.85]
-    endelse     
-  endif
+    plot_min=ns_min
+    plot_max=ns_max
+  endif else begin
+    plot_min=im_min
+    plot_max=im_max
+  endelse
   
   im_pc = where(im_flat gt 0 and finite(im_flat) eq 1, im_c)
   im_pc = 1.0*im_c/n_elements(im_flat)
   
-  im_col = bytscl(im_col,/nan)
-  
+  if keyword_set(clog) then $
+    im_col = bytscl(alog10(im_col),/nan, min=alog10(plot_min+1), max=alog10(plot_max)) else $
+    im_col = bytscl(im_col,/nan, min=plot_min, max=plot_max)
+
   if im_plot eq 1 then begin
-    window, 2, xsize = 600, ysize = 600
+    window, 2, xsize = 900, ysize = 900
     !p.multi  = [0,1,1]
     !x.omargin = [15,15]
     loadct,0
@@ -218,7 +230,7 @@ function image_bin_km, $
     cwidth = (p1[0]-p0[0])*cw
   
     position = [p1[0]+width,p0[1],p1[0]+width+cwidth,p1[1]]
-    colorbar_krm,position,im_min,im_max,ct, /vertical, /right, c_title = 'Raylieghs', log=clog, tl = -0.3, rev_ct = rev_ct, ct_file=ct_file
+    colorbar_krm,position,plot_min,plot_max,ct, /vertical, /right, c_title = 'Raylieghs', log=clog, tl = -0.3, rev_ct = rev_ct, ct_file=ct_file
     
     if save_png eq 1 then begin
       makepng,out_dir+time_string(ts, tformat='YYYYMMDD_hhmmss')
@@ -227,8 +239,8 @@ function image_bin_km, $
   
   return, {name:'binned image in km pixels', lat_min:lat_min, $
            lat_res:lat_res, lon_res:lon_res,  $ 
-           im:im_flat, lon_ver:lon_vert, lat_vert:lat_vert, mlt_pix:mlt_pix.ToArray(), t:ts, $
-           im_max:im_max, im_min:im_min, im_pc:im_pc, $
+           im:im_flat, lon_ver:lon_vert, lat_vert:lat_vert, mlt_pix:mlt_pix, t:ts, $
+           im_max:im_max, im_min:im_min, im_pc:im_pc, ns_min:ns_min, ns_max:ns_max, $ $
            mlt_mid:mlt_mid, mlon_mid:mlon_mid, glon_mid:glon_mid}
 end
 
@@ -239,9 +251,11 @@ end
 
 fn = 'D:\data\IMAGE_FUV\2001\WIC\016\wic20010160013.idl'
 fn = "D:\data\IMAGE_FUV\2001\WIC\016\wic20010161609.idl"
+fn = "D:\data\IMAGE_FUV\2001\WIC\015\wic20010150809.idl"
 
-im = image_bin_km(fn,/im_plot)
+im = image_bin_km(fn,/im_plot, /ns_scl)
 stop
+
 
 out_f = 'D:\data\IMAGE_FUV\out_dat.txt'
 fn = file_search('D:\data\IMAGE_FUV\2001\WIC\*\*.idl')
