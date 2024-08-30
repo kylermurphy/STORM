@@ -41,7 +41,9 @@ function image_bin_km, $
   
   mlt_mid = min(abs(imageinfo.mlt))
   mlon_mid = imageinfo.mlon[!C]
+  if mlon_mid lt 0 then mlon_mid = 360+mlon_mid
   glon_mid = imageinfo.glon[!C]
+  if glon_mid lt 0 then glon_mid = 360+glon_mid
   
   mlt_arr = imageinfo.mlt
   bd = where(mlt_arr lt 0,c)
