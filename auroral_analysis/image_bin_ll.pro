@@ -71,7 +71,9 @@ function image_bin_ll, $
   
   mlt_mid = min(abs(imageinfo.mlt))
   mlon_mid = imageinfo.mlon[!C]
+  if mlon_mid lt 0 then mlon_mid = 360+mlon_mid
   glon_mid = imageinfo.glon[!C]
+  if glon_mid lt 0 then glon_mid = 360+glon_mid
   
   nlat = (90.-lat_min)/lat_res
   lat_arr = findgen(nlat+1)*lat_res
