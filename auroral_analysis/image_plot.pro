@@ -74,6 +74,12 @@ pro image_plot, $
     
 end
 
+;todo
+; change/test return arrays to a lambda
+; avg = lambda(n : total(n/nan)
+; val = vec.map(avg,/vector)
+; add coordinates to image_bin_km 
+
 
 
 ; main
