@@ -55,9 +55,23 @@ function image_fit_ll, $
         lon_pos+(im.dim)[0], lon_pos+(im.dim)[0]-1, lon_pos+(im.dim)[0]+1]
     endelse
     
-    sun_pix = region_grow(im,lon_pos, /all_neighbors, /nan,stddev_multiplier=5)
+    day_px = where(im_str.mlt_arr gt 6 and im_str.mlt_arr lt 18, dc, complement=ns_pix)
     
+    sun_arr = im
+    sun_min = min(sun_arr[day_px])
+    sun_arr[ns_pix] = sun_min
     
+    ; find the brightest 5% pixels
+    ; 5% b/c we've already cut the array
+    ; in half with dayside
+    sun_sort = sort(sun_arr, /l64)
+    sun_peak = sun_sort[sun_sort.length*0.90:-1]
+    
+    sun_pix = region_grow(im,sun_peak, /all_neighbors, /nan,stddev_multiplier=1.5)
+    
+    sun2 = im
+    sun2[sun_pix] = max(sun_arr)
+    tvscale, sun2,/nointerpolation
     ;identify the roi using gauss_smooth and pick the pixels in the 95th percentile
     
     stop
@@ -93,8 +107,10 @@ function image_fit_ll, $
     stop
   endif
   
-  g_coeff = findgen(l_pts, 5)
-  g_chi = findgen(l_pts)
+  g_coeff = fltarr(l_pts, 5)
+  g_coeff[*] = !values.f_nan
+  g_chi = fltarr(l_pts)
+  g_chi[*] = !values.f_nan
   g_fit = im
   g_fit[*] = !values.f_nan
   
@@ -109,42 +125,93 @@ function image_fit_ll, $
   g_fit[dawn_mn[0], gd_fit] = g_f
   g_chi[dawn_mn[0]] = chisq
   
-  window
-  loadct,39,/silent
-  plot, lat_fit[gd_fit],mn_fit[gd_fit]
-  oplot, lat_fit[gd_fit],g_f, color = 55
   
   ;repeat the above for cw toward noon
   for i=1L, dawn_mn.length-1 do begin
-    stop
     mn_fit = reform(im[dawn_mn[i],*])
+    mlt_fit = median(reform(im_str.mlt_arr[dawn_mn[i],*]))
+
+    if mlt_fit gt 6 then begin
+      b_dat = where(mn_fit gt pk or mn_fit lt mn, bc)
+      if bc gt 0 then mn_fit[b_dat] = !values.f_nan
+    endif
+
+
+
     gd_fit = where(finite(mn_fit) eq 1)
+    if max(lat_fit[gd_fit],min=mm,/nan)-mm lt 25 then continue
     g_f = gaussfit(lat_fit[gd_fit],mn_fit[gd_fit], g_c, $
       chisq=chisq, nterms=5, estimates=reform(g_coeff[dawn_mn[i-1],*]))
-    
+
     g_coeff[dawn_mn[i],*] = g_c
     g_fit[dawn_mn[i], gd_fit] = g_f
     g_chi[dawn_mn[i]] = chisq
-    
-    loadct,39,/silent
-    plot, lat_fit[gd_fit],mn_fit[gd_fit]
-    oplot, lat_fit[gd_fit],g_f, color = 55
+
+    pk = max(mn_fit,/nan)
+    mn = min(mn_fit,/nan)
+
   endfor
-  stop
   
-  ;
-  ; what about starting fitting around the night-side?
-
-  for i=0L, lon_fit.length-1 do begin
+  ;repeat the above for ccw toward noon
+  pk=-1
+  mn=-1
+  dk_pts = dusk_mn.length
+  for j=0L, dk_pts-1 do begin
+    i = dk_pts-j-1
+    mn_fit = reform(im[dusk_mn[i],*])
+    mlt_fit = median(reform(im_str.mlt_arr[dusk_mn[i],*]))
     
+    if mlt_fit lt 18 then begin
+      b_dat = where(mn_fit gt pk or mn_fit lt mn, bc)
+      if bc gt 0 then mn_fit[b_dat] = !values.f_nan
+    endif
+
+    
+    
+    gd_fit = where(finite(mn_fit) eq 1)
+    ;if max(lat_fit[gd_fit],min=mm,/nan)-mm lt 25 then continue
+    
+    if j eq 0 then f_est=reform(g_coeff[dawn_mn[0],*]) $
+     else f_est=reform(g_coeff[dusk_mn[i+1],*])
+    
+    g_f = gaussfit(lat_fit[gd_fit],mn_fit[gd_fit], g_c, $
+      chisq=chisq, nterms=5, estimates=f_est)
+    
+    g_coeff[dusk_mn[i],*] = g_c
+    g_fit[dusk_mn[i], gd_fit] = g_f
+    g_chi[dusk_mn[i]] = chisq
+    
+    pk = max(mn_fit,/nan)
+    mn = min(mn_fit,/nan)
     
   endfor
+  
+  lon_plot = lon_fit
+  lat_plot = g_coeff[*,1]
+    
+  r_str = create_struct('lon_fit',lon_fit, 'lat_fit',lat_fit, $
+           'g_coeff',g_coeff, 'g_fit',g_fit, 'g_chi',g_chi, name='Fit Oval')
+            
+  rot_t = 90
+  r = 90-lat_plot
+  theta = lon_plot-im_str.mlon_mid
+  
+  x = r*cos((theta-rot_t)*!dtor)
+  y = r*sin((theta-rot_t)*!dtor) 
 
+  gd = where(finite(x) eq 1)
 
-  stop
-  return,0
+  e_fit = mpfitellipse(x[gd],y[gd], /quiet, /tilt, status= e_stat)
+
+  phi = findgen(180)*2*!dtor
+
+  xm = e_fit[2] + e_fit[0]*cos(phi)*cos(e_fit[4]) + e_fit[1]*sin(phi)*sin(e_fit[4])
+  ym = e_fit[3] - e_fit[0]*cos(phi)*sin(e_fit[4]) + e_fit[1]*sin(phi)*cos(e_fit[4])
+  
+  im_str = create_struct(im_str, 'oval_fit', r_str, name='Image Data')
+  
+  return, im_str
 end
-
 
 ; Main
 ; 
@@ -160,9 +227,30 @@ fn = "D:\data\IMAGE_FUV\2001\WIC\015\wic20010150809.idl"
 ;identify the roi using gauss_smooth and pick the pixels in the 95th percentile
 ; sun needs to be remobed
 
-
+sr = 0
 im = image_bin_ll(fn, lon_res=5)
-image_plot, im, xsize=900, ysize=900, win=2
-imf = image_fit_ll(im)
+im_fit = image_fit_ll(im, sun_rm=sr)
+image_plot, im_fit, xsize=900, ysize=900, win=2
+
+; fit an ellipse and plot on top of the image
+rot_t = 90
+r = 90-im_fit.oval_fit. g_coeff[*,1]
+theta = im_fit.oval_fit.lon_fit-im_fit.mlon_mid
+
+x = r*cos((theta-rot_t)*!dtor)
+y = r*sin((theta-rot_t)*!dtor)
+
+gd = where(finite(x) eq 1)
+
+e_fit = mpfitellipse(x[gd],y[gd], /quiet, /tilt, status= e_stat)
+
+phi = findgen(180)*2*!dtor
+
+xm = e_fit[2] + e_fit[0]*cos(phi)*cos(e_fit[4]) + e_fit[1]*sin(phi)*sin(e_fit[4])
+ym = e_fit[3] - e_fit[0]*cos(phi)*sin(e_fit[4]) + e_fit[1]*sin(phi)*cos(e_fit[4])
+
+loadct,1,/silent
+plots, x,y, psym=sym(1), color=175
+oplot, xm,ym, color=175, thick=1.5
 
 end
