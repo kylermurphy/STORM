@@ -136,10 +136,8 @@ function image_fit_ll, $
       if bc gt 0 then mn_fit[b_dat] = !values.f_nan
     endif
 
-
-
     gd_fit = where(finite(mn_fit) eq 1)
-    if max(lat_fit[gd_fit],min=mm,/nan)-mm lt 25 then continue
+    if max(lat_fit[gd_fit],min=mm,/nan)-mm lt 20 then continue
     g_f = gaussfit(lat_fit[gd_fit],mn_fit[gd_fit], g_c, $
       chisq=chisq, nterms=5, estimates=reform(g_coeff[dawn_mn[i-1],*]))
 
@@ -166,10 +164,9 @@ function image_fit_ll, $
       if bc gt 0 then mn_fit[b_dat] = !values.f_nan
     endif
 
-    
-    
-    gd_fit = where(finite(mn_fit) eq 1)
-    ;if max(lat_fit[gd_fit],min=mm,/nan)-mm lt 25 then continue
+    gd_fit = where(finite(mn_fit) eq 1, ll)
+    if ll le 6 then continue
+    if max(lat_fit[gd_fit],min=mm,/nan)-mm lt 10 then continue
     
     if j eq 0 then f_est=reform(g_coeff[dawn_mn[0],*]) $
      else f_est=reform(g_coeff[dusk_mn[i+1],*])
