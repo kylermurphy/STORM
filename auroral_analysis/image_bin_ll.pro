@@ -83,6 +83,7 @@ function image_bin_ll, $
   lon_arr = findgen(nlon+1)*lon_res
 
   im_arr = fltarr(nlon,nlat)
+  mlt_dat = im_arr
   lon_mask =  fltarr(im.dim)
   lat_mask = lon_mask
   
@@ -112,10 +113,12 @@ function image_bin_ll, $
       im_val = total(lon_mask*lat_mask*im,/nan)
       im_val = mean(lon_mask*lat_mask*im,/nan)
       im_arr[j,i] = im_val
+      mlt_dat[j,i] = median(lon_mask*lat_mask*mlt_arr)
+      
       im_flat.Add, im_val
       lat_vert.Add, lat_vec
       lon_vert.Add, lon_vec
-      mlt_pix.Add, mean(lon_mask*lat_mask*mlt_arr,/nan)
+      mlt_pix.Add, median(lon_mask*lat_mask*mlt_arr)
     endfor
   endfor
 
@@ -157,15 +160,14 @@ function image_bin_ll, $
     plot_max=im_max
   endelse
 
-  
   if im_max - 100 lt im_min then return, 0
   if finite(im_max) eq 0 or finite(im_min) eq 0 then return, 0
 
   return, {name:'lat/lon binned image', coordinate:coord, lat_min:lat_min, $
            lat_res:lat_res, lon_res:lon_res,  $ 
-           im:im_arr, lat_arr:lat_arr, lon_arr:lon_arr, $
+           im:im_arr, lat_arr:lat_arr, lon_arr:lon_arr, mlt_arr:mlt_dat, $
            im_flat:im_flat, lat_vert:lat_vert.ToArray(), $
-           lon_vert:lon_vert.ToArray(), mlt_pix:mlt_pix, t:ts, $ 
+           lon_vert:lon_vert.ToArray(), mlt_flat:mlt_pix, t:ts, $ 
            im_max:im_max, im_min:im_min, ns_min:ns_min, ns_max:ns_max, $
            mlt_mid:mlt_mid, mlon_mid:mlon_mid, glon_mid:glon_mid, coord:coord}
 end
