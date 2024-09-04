@@ -6,7 +6,6 @@ function image_fit_ll, $
   lon_mid=lon_mid ; midnight longitude
 
 
-
   ; get the tag names and make sure
   ; the data we need is there
   tags = tag_names(im_str)
@@ -25,6 +24,8 @@ function image_fit_ll, $
     else lon_mid = im_str.mlt_mid*15
   
   im = im_str.(im_p)
+  bd_im = where(im le 1 and im gt 10000, im_c)
+  if im_c gt 0 then im[bd_im]=!values.f_nan
   lon_arr = im_str.(lon_p)
   lat_arr = im_str.(lat_p)
   
@@ -107,6 +108,8 @@ function image_fit_ll, $
     stop
   endif
   
+  mlt_fit = fltarr(l_pts)
+  mlt_fit[*] = !values.f_nan
   g_coeff = fltarr(l_pts, 5)
   g_coeff[*] = !values.f_nan
   g_chi = fltarr(l_pts)
@@ -114,39 +117,57 @@ function image_fit_ll, $
   g_fit = im
   g_fit[*] = !values.f_nan
   
+  g_sig = g_coeff
+  
   ; first fit at midnight
   mn_fit = reform(im[dawn_mn[0],*])
   gd_fit = where(finite(mn_fit) eq 1)
   g_f = gaussfit(lat_fit[gd_fit],mn_fit[gd_fit], g_c, $
-                    chisq=chisq, nterms=5)
+                    chisq=chisq, nterms=5, sigma=ss)
   
   ; fill the arrays
   g_coeff[dawn_mn[0],*] = g_c
   g_fit[dawn_mn[0], gd_fit] = g_f
   g_chi[dawn_mn[0]] = chisq
+  g_sig[dawn_mn[0],*] = ss
   
+  mlt_fit[dawn_mn[0]] = median(reform(im_str.mlt_arr[dawn_mn[0],*]))
   
   ;repeat the above for cw toward noon
+  g_old=g_c
   for i=1L, dawn_mn.length-1 do begin
     mn_fit = reform(im[dawn_mn[i],*])
-    mlt_fit = median(reform(im_str.mlt_arr[dawn_mn[i],*]))
+    mlt_fit[dawn_mn[i]] = median(reform(im_str.mlt_arr[dawn_mn[i],*]))
 
-    if mlt_fit gt 6 then begin
-      b_dat = where(mn_fit gt pk or mn_fit lt mn, bc)
+    if mlt_fit[dawn_mn[i]] gt 6 then begin
+      b_dat = where(mn_fit gt 1.1*pk or mn_fit lt 0.75*mn, bc)
       if bc gt 0 then mn_fit[b_dat] = !values.f_nan
     endif
 
     gd_fit = where(finite(mn_fit) eq 1)
     if max(lat_fit[gd_fit],min=mm,/nan)-mm lt 20 then continue
     g_f = gaussfit(lat_fit[gd_fit],mn_fit[gd_fit], g_c, $
-      chisq=chisq, nterms=5, estimates=reform(g_coeff[dawn_mn[i-1],*]))
+      chisq=chisq, nterms=5, estimates=g_old, status=stat, sigma=ss)
+
+    if stat ne 0 then continue
+    if g_c[0] lt 0 then continue
+    if g_c[2] gt 10 then continue
 
     g_coeff[dawn_mn[i],*] = g_c
     g_fit[dawn_mn[i], gd_fit] = g_f
     g_chi[dawn_mn[i]] = chisq
+    g_sig[dawn_mn[i],*] = ss
+    
+;    loadct,39,/silent
+;    plot, lat_fit[gd_fit],mn_fit[gd_fit]
+;    oplot, lat_fit[gd_fit], g_f, color = 44
+;    print, g_c
 
-    pk = max(mn_fit,/nan)
-    mn = min(mn_fit,/nan)
+    gd_pk = where(lat_fit gt g_c[1]-2*g_c[2] and lat_fit lt g_c[1]+2*g_c[2], pk_c)
+    if pk_c gt 3 then pk = max(mn_fit[gd_pk],/nan) else pk=max(mn_fit,/nan) 
+    if pk_c gt 3 then mn = min(mn_fit[gd_pk],/nan) else min=min(mn_fit,/nan)
+    
+    g_old = g_c
 
   endfor
   
@@ -154,35 +175,49 @@ function image_fit_ll, $
   pk=-1
   mn=-1
   dk_pts = dusk_mn.length
+  g_old = g_coeff[dawn_mn[0],*]
+  
   for j=0L, dk_pts-1 do begin
     i = dk_pts-j-1
     mn_fit = reform(im[dusk_mn[i],*])
-    mlt_fit = median(reform(im_str.mlt_arr[dusk_mn[i],*]))
+    mlt_fit[dusk_mn[i]] = median(reform(im_str.mlt_arr[dusk_mn[i],*]))
     
-    if mlt_fit lt 18 then begin
-      b_dat = where(mn_fit gt pk or mn_fit lt mn, bc)
+    if mlt_fit[dusk_mn[i]] lt 20 then begin
+      b_dat = where(mn_fit gt 1.1*pk or mn_fit lt mn*0.75, bc)
       if bc gt 0 then mn_fit[b_dat] = !values.f_nan
     endif
 
     gd_fit = where(finite(mn_fit) eq 1, ll)
     if ll le 6 then continue
-    if max(lat_fit[gd_fit],min=mm,/nan)-mm lt 10 then continue
-    
-    if j eq 0 then f_est=reform(g_coeff[dawn_mn[0],*]) $
-     else f_est=reform(g_coeff[dusk_mn[i+1],*])
+    if max(lat_fit[gd_fit],min=mm,/nan)-mm lt 20 then continue
     
     g_f = gaussfit(lat_fit[gd_fit],mn_fit[gd_fit], g_c, $
-      chisq=chisq, nterms=5, estimates=f_est)
+      chisq=chisq, nterms=5, estimates=g_old, status=stat, sigma=ss)
+    
+    if stat ne 0 then continue
+    if g_c[0] lt 0 then continue
     
     g_coeff[dusk_mn[i],*] = g_c
     g_fit[dusk_mn[i], gd_fit] = g_f
     g_chi[dusk_mn[i]] = chisq
+    g_sig[dusk_mn[i],* ] = ss
     
-    pk = max(mn_fit,/nan)
-    mn = min(mn_fit,/nan)
+;    loadct,39,/silent
+;    plot, lat_fit[gd_fit],mn_fit[gd_fit]
+;    oplot, lat_fit[gd_fit], g_f, color = 44
+;    print, ss
+;    stop
+    
+    gd_pk = where(lat_fit gt g_c[1]-2*g_c[2] and lat_fit lt g_c[1]+2*g_c[2], pk_c)
+    if pk_c gt 3 then pk = max(mn_fit[gd_pk],/nan) else pk=max(mn_fit,/nan) 
+    if pk_c gt 3 then mn = min(mn_fit[gd_pk],/nan) else min=min(mn_fit,/nan)
+    
+    g_old = g_c
     
   endfor
-  
+
+
+
   lon_plot = lon_fit
   lat_plot = g_coeff[*,1]
     
@@ -215,17 +250,18 @@ end
 ; 
 
 fn = 'D:\data\IMAGE_FUV\2001\WIC\016\wic20010161609.idl'
-fn = "D:\data\IMAGE_FUV\2001\WIC\001\wic20010010351.idl"
-fn = "D:\data\IMAGE_FUV\2001\WIC\015\wic20010151622.idl"
-fn = "D:\data\IMAGE_FUV\2001\WIC\015\wic20010151328.idl"
+fn = "D:\data\IMAGE_FUV\2001\WIC\001\wic20010010449.idl"
+;fn = "D:\data\IMAGE_FUV\2001\WIC\015\wic20010151622.idl"
+;fn = "D:\data\IMAGE_FUV\2001\WIC\015\wic20010151328.idl"
 
-fn = "D:\data\IMAGE_FUV\2001\WIC\015\wic20010150809.idl"
+;fn = "D:\data\IMAGE_FUV\2001\WIC\015\wic20010150809.idl"
 
 ;identify the roi using gauss_smooth and pick the pixels in the 95th percentile
 ; sun needs to be remobed
 
 sr = 0
 im = image_bin_ll(fn, lon_res=5)
+window
 im_fit = image_fit_ll(im, sun_rm=sr)
 image_plot, im_fit, xsize=900, ysize=900, win=2
 
