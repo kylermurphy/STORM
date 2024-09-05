@@ -206,6 +206,7 @@ end
 
 ;main
 fn = "D:\data\IMAGE_FUV\2001\WIC\016\wic20010161609.idl"
+fn = "D:\data\IMAGE_FUV\2001\WIC\015\wic20010150809.idl"
 plot_image_ql, fn
 
 

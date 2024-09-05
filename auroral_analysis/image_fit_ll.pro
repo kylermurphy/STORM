@@ -254,14 +254,13 @@ fn = "D:\data\IMAGE_FUV\2001\WIC\001\wic20010010449.idl"
 ;fn = "D:\data\IMAGE_FUV\2001\WIC\015\wic20010151622.idl"
 ;fn = "D:\data\IMAGE_FUV\2001\WIC\015\wic20010151328.idl"
 
-;fn = "D:\data\IMAGE_FUV\2001\WIC\015\wic20010150809.idl"
+fn = "D:\data\IMAGE_FUV\2001\WIC\015\wic20010150809.idl"
 
 ;identify the roi using gauss_smooth and pick the pixels in the 95th percentile
 ; sun needs to be remobed
 
 sr = 0
 im = image_bin_ll(fn, lon_res=5)
-window
 im_fit = image_fit_ll(im, sun_rm=sr)
 image_plot, im_fit, xsize=900, ysize=900, win=2
 

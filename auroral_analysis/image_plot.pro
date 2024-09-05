@@ -28,7 +28,7 @@ pro image_plot, $
     
     if keyword_set(ct) then ct=ct else ct=56
     if keyword_set(win) then win=win else win=0
-    if keyword_set(wf) then wf=wf else wf=0.05
+    if keyword_set(wf) then wf=wf else wf=0.02
     if keyword_set(cw) then cw=cw else cw=0.03
     
     ; rotate the figure
