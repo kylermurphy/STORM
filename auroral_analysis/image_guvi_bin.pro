@@ -18,7 +18,7 @@ function image_guvi_bin, $
   
   ; define the 
   dlat = km_bin*360./(2.*!pi*h_map)
-  nlat = (90.-lat_min)/dlat
+  nlat = lat_min/dlat
   lat_arr = findgen(nlat+2)*dlat
   lat_arr = 90-max(lat_arr)+lat_arr
   
@@ -66,11 +66,11 @@ function image_guvi_bin, $
   for i=0L, x_fl.length-2 do begin
     x_vert = [x_fl[i],x_fl[i+1],x_fr[i+1],x_fr[i],x_fl[i]]
     y_vert = [y_fl[i],y_fl[i+1],y_fr[i+1],y_fr[i],y_fl[i]]
-    polyfill, x_vert, y_vert, color=color[i]
+    loadct,25,/silent
+    polyfill, x_vert, y_vert, color=color[i], noclip=0
+    loadct,0,/silent
+    plots, x_vert,y_vert, noclip=0
   endfor
-  loadct,0,/silent
-  plots, x_fl, y_fl, psym=sym(1), symsize=0.5
-  plots, x_fr, y_fr, psym=sym(1), symsize=0.5
 
   ; convert spherical coordinates to 
   ; cartesian, rotate about x-axis by dlat
@@ -78,42 +78,78 @@ function image_guvi_bin, $
   
   r_sp = lon_lf
   r_sp[*] = h_map
-  sp_coord = [[lon_lf], [lat_f], [r_sp]]
-  
-  ct_coord = cv_coord(from_sphere=transpose(sp_coord), /to_rect, /degree)
+  sp_coord_l = [[lon_lf], [lat_f], [r_sp]]
+  sp_coord_r = [[lon_rf], [lat_f], [r_sp]]
+   
+  ct_coord_l = cv_coord(from_sphere=transpose(sp_coord_l), /to_rect, /degree)
+  ct_coord_r = cv_coord(from_sphere=transpose(sp_coord_r), /to_rect, /degree)
   ; create a rotation matrix
+  col_p = bytscl(indgen(r_sp.length), top=78)+78
+  col_t = [50,61]
   y_max = 0
   i = 1L
+  ct_i=0L
   loadct,25,/silent
   while y_max le lat_min do begin
     r_mx = mg_rotate([1,0,0],i*dlat)
     r_mx = r_mx[0:2,0:2]
 
-    r_ct = r_mx#ct_coord
+    r_ct_l = r_mx#ct_coord_l
+    r_ct_r = r_mx#ct_coord_r
 
-    sp_ct = cv_coord(from_rect=r_ct, /to_sphere,/degree)
+    sp_ct_l = cv_coord(from_rect=r_ct_l, /to_sphere,/degree)
+    sp_ct_r = cv_coord(from_rect=r_ct_r, /to_sphere,/degree)
 
-    lon_rot = sp_ct[0,*]
-    lat_rot = sp_ct[1,*]
+    lon_rot_l = sp_ct_l[0,*]
+    lat_rot_l = sp_ct_l[1,*]
 
-    x_rot = (90-lat_rot)*cos(lon_rot*!dtor)
-    y_rot = (90-lat_rot)*sin(lon_rot*!dtor)
+    x_rot_l = (90-lat_rot_l)*cos(lon_rot_l*!dtor)
+    y_rot_l = (90-lat_rot_l)*sin(lon_rot_l*!dtor)
+    
+    lon_rot_r = sp_ct_r[0,*]
+    lat_rot_r = sp_ct_r[1,*]
 
-    plots, x_rot, y_rot, psym=sym(1), symsize=0.5, color = i*5
-    y_max = max(y_rot)
+    x_rot_r = (90-lat_rot_r)*cos(lon_rot_r*!dtor)
+    y_rot_r = (90-lat_rot_r)*sin(lon_rot_r*!dtor)
+
+    for j=0L, x_rot_r.length-2 do begin
+      x_vert = [x_rot_l[j],x_rot_l[j+1],x_rot_r[j+1],x_rot_r[j],x_rot_l[j]]
+      y_vert = [y_rot_l[j],y_rot_l[j+1],y_rot_r[j+1],y_rot_r[j],y_rot_l[j]]
+      ;loadct,col_t[ct_i],/silent
+      
+      if i mod 2 ne 0 then begin
+        loadct,col_t[0],/silent
+        reverse_ct
+      endif else loadct, col_t[1], /silent
+      
+      ;polyfill, x_vert, y_vert, color=col_p[j]
+      loadct,0,/silent
+      plots, x_vert,y_vert, noclip=0
+    endfor
+    
+    
+    ;plots, x_rot_l, y_rot_l, psym=sym(1), symsize=0.5, color = col_p
+    y_max = max(y_rot_l)
     i = i+1
+    ;if ct_i eq col_t.length-1 then ct_i=0 else ct_i=ct_i+1
   endwhile
   
+  
+  
+  stop
+  
+  
+  ; this is guvi stuff
   xlat=0.5
   
-  ll = findgen((90-lat_min)/xlat+1)*xlat+lat_min
+  ll = 90-findgen(lat_min/xlat+1)*xlat
 
   x = h_map*sin((90-ll)*!dtor)
   
   ap = 30*re - h_map*cos((90-ll)*!dtor)
   rp = sqrt(ap*ap+x*x)
   
-  y =  (0.26*1E-3)*rp
+  y =  2*(0.26*1E-3)*rp
   
   y_u = y/2.
   y_l = -1*y_u
@@ -155,9 +191,7 @@ function image_guvi_bin, $
     ;stop
   endfor 
        
-  stop
-  
-  dlat = 0.00030636787/!dtor
+  rlat = 2*0.00030636787/!dtor
   y_max = 0
   i = 1L
   loadct,25,/silent
@@ -165,9 +199,9 @@ function image_guvi_bin, $
   ;prime coord system
   c_prime = transpose([[x],[y_l],[zp]])
   
-  
+  stop
   while y_max le lat_min do begin
-    r_mx = mg_rotate([1,0,0],-1*i*dlat)
+    r_mx = mg_rotate([1,0,0],-1*i*rlat)
     r_mx = r_mx[0:2,0:2]
 
     r_ct = r_mx#c_prime
@@ -189,7 +223,7 @@ function image_guvi_bin, $
   endwhile
        
        
-       
+  stop
   return, 0   
 end
 
@@ -197,7 +231,7 @@ end
 ;main
 ;
 
-a = image_guvi_bin(100)
+a = image_guvi_bin(100, lat_min=40)
 
 
 end
