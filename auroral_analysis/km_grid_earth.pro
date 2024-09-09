@@ -1,6 +1,6 @@
 function km_grid_earth, $
          km_bin, $
-         lat_min=lat_min, $
+         colat_min=colat_min, $
          hgt=hgt, $
          translate=translate, $
          plot_grid=plot_grid
@@ -9,7 +9,7 @@ function km_grid_earth, $
   ; Guvi bin
   ;create lat/lon bins
   ; start along the positive y-axis
-  if keyword_set(lat_min) then lat_min=lat_min else lat_min=45.
+  if keyword_set(colat_min) then lat_min=colat_min else lat_min=45.
   if keyword_set(hgt) then hgt=hgt else hgt=110
   if keyword_set(translate) then translate=1 else translate=0
   
@@ -71,17 +71,20 @@ function km_grid_earth, $
   ;rotate or translate the initial grid
   ; to get a full set of grids
   if translate eq 1 then begin
-    ;f_gr = translate_grid_earth(lat_f,lon_lf,lon_rf,h_map)
-    f_gr = translate_grid_earth_simp(lat_f,lon_lf,lon_rf)
+    f_gr = translate_grid_earth(lat_f,lon_lf,lon_rf,h_map)
+    ;f_gr = translate_grid_earth_simp(lat_f,lon_lf,lon_rf)
   endif else begin
     f_gr = rot_grid_earth(lat_f,lon_lf,lon_rf,h_map, dlat)
   endelse
   
   ; plot the grid
   if keyword_set(plot_grid) then begin
-    loadct, 0, /silent
-    window, /free
-    plot, [-1*lat_min, lat_min], [-1*lat_min, lat_min], /isotropic, /nodata
+    if not keyword_set(overplot) then begin
+      loadct, 0, /silent
+      window, /free
+      plot, [-1*lat_min, lat_min], [-1*lat_min, lat_min], /isotropic, /nodata
+    endif
+
     
     for i=0L, n_elements(f_gr.lat_up[*,0])-1 do begin
       x_u = reform((90-f_gr.lat_up[i,*])*cos(f_gr.lon_up[i,*]*!dtor))
@@ -107,7 +110,7 @@ end
 
 ; main
 ; 
-a = km_grid_earth(100, lat_min=40, /plot, /translate)
+a = km_grid_earth(100, colat_min=20, /plot, translate=1)
 
 
 end
