@@ -36,7 +36,7 @@ pro image_plot, $
     ; is on the -ve y axis
     ns_d = 90
     ; minimum to plot
-    r_min = 90 - im_str.lat_min
+    r_min = im_str.colat_min
     p_arr = [-1*r_min,r_min]
     ; rotate the plot so the -ve
     ; y-axis is is zero longitude
@@ -86,8 +86,8 @@ end
 ; 
 
 fn = "D:\data\IMAGE_FUV\2001\WIC\015\wic20010150809.idl"
-im0 = image_bin_ll(fn, lon_res=2)
-im1 = image_bin_km(fn, /im_plot, /ns_scl) 
+im0 = image_bin_ll(fn, lon_res=2, colat_min=20)
+im1 = image_bin_km(fn, /ns_scl, colat_min=20) 
 
 image_plot,im0, xsize=900, ysize=900
 image_plot,im1, xsize=900, ysize=900, win=1

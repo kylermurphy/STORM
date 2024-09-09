@@ -1,6 +1,6 @@
 pro image_plot_sav, $
       fn, $
-      lat_min=lat_min, $
+      colat_min=colat_min, $
       mag = mag, $ ; use geomagnetic coordinates
       geo = geo, $ ; use geographic coordinates
       mlt = mlt, $ ; use mlt and magnetic latitude
@@ -14,7 +14,7 @@ pro image_plot_sav, $
       
       
    
-  if keyword_set(lat_min) then lat_min=lat_min else lat_min=45.
+  if keyword_set(colat_min) then lat_min=colat_min else lat_min=45.
   if keyword_set(mag) then mag = 1 else mag = 0
   if keyword_set(geo) then geo = 1 else geo = 0
   if keyword_set(mlt) then mlt = 1 else mlt = 0

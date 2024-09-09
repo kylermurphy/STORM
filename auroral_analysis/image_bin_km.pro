@@ -2,7 +2,7 @@ function image_bin_km, $
   fn, $ ; file to load
   lat_res = lat_res, $ ; km resolution in the latitude direction
   lon_res = lon_res, $ ; km resolution in the longitude direction
-  lat_min = lat_min, $ ; minimum latitude for grid
+  colat_min = colat_min, $ ; minimum latitude for grid
   hgt = hgt, $ ; height of the aurora
   im_min = im_min, $ ; min intensity to plot
   im_max = im_max, $ ; max intensity to plot
@@ -15,7 +15,7 @@ function image_bin_km, $
   
   if keyword_set(lat_res) then lat_res=lat_res else lat_res=100.
   if keyword_set(lon_res) then lon_res=lon_res else lon_res=100.
-  if keyword_set(lat_min) then lat_min=lat_min else lat_min=45.
+  if keyword_set(colat_min) then lat_min=colat_min else lat_min=45.
   if keyword_set(hgt) then hgt=hgt else hgt=110
   if keyword_set(im_plot) then im_plot=1 else im_plot=0 
   if keyword_set(clog) then clog=1 else clog=0
@@ -65,8 +65,10 @@ function image_bin_km, $
   
   ; setup latitude grid
   ; using arc legnth and lat_res
+  
+  
   dlat = lat_res*360./(2.*!pi*h_map)
-  nlat = (90.-lat_min)/dlat
+  nlat = (lat_min)/dlat
   lat_arr = findgen(nlat+1)*dlat
   lat_arr = 90-max(lat_arr)+lat_arr
   
@@ -202,7 +204,7 @@ function image_bin_km, $
     !x.omargin = [15,15]
     loadct,0
     xyouts, 0.5,0.85, ts, /normal, alignment=0.5, charsize=1.5
-    map_set, 90, 0, 180, /azimuthal,/isotropic, limit=[lat_min,0,90,360],/noerase
+    map_set, 90, 0, 180, /azimuthal,/isotropic, limit=[90-colat_min,0,90,360],/noerase
     ; plot circles for each pixel
     loadct, ct
     
@@ -230,7 +232,7 @@ function image_bin_km, $
     endif
   endif
   
-  return, {name:'binned image in km pixels', lat_min:lat_min, $
+  return, {name:'binned image in km pixels', colat_min:lat_min, $
            lat_res:lat_res, lon_res:lon_res,  $ 
            im_flat:im_flat, lon_vert:lon_vert, lat_vert:lat_vert, mlt_pix:mlt_pix, t:ts, $
            im_max:im_max, im_min:im_min, im_pc:im_pc, ns_min:ns_min, ns_max:ns_max, $ $
@@ -246,7 +248,8 @@ fn = 'D:\data\IMAGE_FUV\2001\WIC\016\wic20010160013.idl'
 fn = "D:\data\IMAGE_FUV\2001\WIC\016\wic20010161609.idl"
 fn = "D:\data\IMAGE_FUV\2001\WIC\015\wic20010150809.idl"
 
-im = image_bin_km(fn,/im_plot, /ns_scl)
+im = image_bin_km(fn,/im_plot, /ns_scl, colat_min=20)
+image_plot, im
 stop
 
 

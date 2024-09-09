@@ -2,7 +2,7 @@ function image_bin_ll, $
   fn, $ ; file to load
   lat_res = lat_res, $ ; km resolution in the latitude direction
   lon_res = lon_res, $ ; km resolution in the longitude direction
-  lat_min = lat_min, $ ; minimum latitude for grid
+  colat_min = colat_min, $ ; minimum latitude for grid
   mag = mag, $ ; use geomagnetic coordinates
   geo = geo, $ ; use geographic coordinates
   mlt = mlt, $ ; use mlt and magnetic latitude
@@ -18,7 +18,7 @@ function image_bin_ll, $
   
   if keyword_set(lat_res) then lat_res=lat_res else lat_res=1.
   if keyword_set(lon_res) then lon_res=lon_res else lon_res=5.
-  if keyword_set(lat_min) then lat_min=lat_min else lat_min=45.
+  if keyword_set(colat_min) then lat_min=colat_min else lat_min=45.
   if keyword_set(mag) then mag = 1 else mag = 0
   if keyword_set(geo) then geo = 1 else geo = 0
   if keyword_set(mlt) then mlt = 1 else mlt = 0
@@ -78,6 +78,10 @@ function image_bin_ll, $
   nlat = (90.-lat_min)/lat_res
   lat_arr = findgen(nlat+1)*lat_res
   lat_arr = 90-max(lat_arr)+lat_arr
+  
+  nlat = (lat_min)/lat_res
+  lat_arr = findgen(nlat+1)*lat_res
+  lat_arr = reverse(90-lat_arr)
 
   nlon = 360/lon_res
   lon_arr = findgen(nlon+1)*lon_res
@@ -91,6 +95,7 @@ function image_bin_ll, $
   lat_vert = list()
   lon_vert = list()
   mlt_pix = list()
+  
   
   for j=0L, nlon-1 do begin
       lon_vec = [lon_arr[j],lon_arr[j],lon_arr[j+1],lon_arr[j+1],lon_arr[j]]
@@ -119,11 +124,13 @@ function image_bin_ll, $
       lat_vert.Add, lat_vec
       lon_vert.Add, lon_vec
       mlt_pix.Add, median(lon_mask*lat_mask*mlt_arr)
+
     endfor
   endfor
 
   im_flat = im_flat.ToArray()
   mlt_pix = mlt_pix.ToArray()
+  
   if size(im_flat,/type) eq 0 then return,0
 
   im_sort = im_flat[sort(im_flat,/l64)]
@@ -160,10 +167,7 @@ function image_bin_ll, $
     plot_max=im_max
   endelse
 
-  if im_max - 100 lt im_min then return, 0
-  if finite(im_max) eq 0 or finite(im_min) eq 0 then return, 0
-
-  return, {name:'lat/lon binned image', coordinate:coord, lat_min:lat_min, $
+  return, {name:'lat/lon binned image', coordinate:coord, colat_min:lat_min, $
            lat_res:lat_res, lon_res:lon_res,  $ 
            im:im_arr, lat_arr:lat_arr, lon_arr:lon_arr, mlt_arr:mlt_dat, $
            im_flat:im_flat, lat_vert:lat_vert.ToArray(), $
@@ -177,7 +181,9 @@ end
 
 fn = "D:\data\IMAGE_FUV\2001\WIC\015\wic20010150809.idl"
 
-im = image_bin_ll(fn)
+im = image_bin_ll(fn, colat_min=30)
+
+image_plot,im, xsize=900, ysize=900
 
 end
 
