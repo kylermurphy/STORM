@@ -3,13 +3,15 @@ function km_grid_guvi, $
   pix_a = pix_a, $ ; field of view of a pixel in radians
   st_l = st_l, $ ; location of storm satellite
   colat_min = colat_min, $ ; minimum latitude to generate FOV for
-  hgt = hgt
+  hgt = hgt, $ ; height to map grid to 
+  plot_grid = plot_grid
   
   if keyword_set(fov_a) then fov_a = fov_a else fov_a = 0.26*1E-3
   if keyword_set(pix_a) then pix_a = pix_a else pix_a = 0.26*1E-3
   if keyword_set(st_l) then st_l = st_l else st_l = 30
   if keyword_set(colat_min) then lat_min=colat_min else lat_min=45.
-  if keyword_set(hgt) then hgt=hgt else hgt=110 
+  if keyword_set(hgt) then hgt=hgt else hgt=110
+  if keyword_set(plot_grid) then plot_grid=1 else plot_grid=0 
 
   ; radius of earth
   re = 6378.14
@@ -93,11 +95,11 @@ function km_grid_guvi, $
   sp_u = cv_coord(from_rect=transpose(cu), /to_sphere,/degree)
   sp_l = cv_coord(from_rect=transpose(cl), /to_sphere,/degree)
   
-  lon_u.Add, sp_u[0,*]
-  lat_u.Add, sp_u[1,*]
+  lon_u.Add, reform(sp_u[0,*])
+  lat_u.Add, reform(sp_u[1,*])
 
-  lon_l.Add, sp_l[0,*]
-  lat_l.Add, sp_l[1,*]
+  lon_l.Add, reform(sp_l[0,*])
+  lat_l.Add, reform(sp_l[1,*])
   
   ; create a prime coordinates system
   ; this is where the origin is at the
@@ -114,26 +116,7 @@ function km_grid_guvi, $
   r_sp = x_u
   r_sp[*] = h_map
   
-  window, 2
-  fixplot
-  plot, [-1*lat_min, lat_min], [-1*lat_min, lat_min], /isotropic, /nodata
-  loadct,25,/silent
-  
-  x_0 = (90-sp_u[1,*])*cos(sp_u[0,*]*!dtor)
-  y_0 = (90-sp_u[1,*])*sin(sp_u[0,*]*!dtor)
-
-  x_1 = (90-sp_l[1,*])*cos(sp_l[0,*]*!dtor)
-  y_1 = (90-sp_l[1,*])*sin(sp_l[0,*]*!dtor)
- 
-
-  color=bytscl(indgen(x_0.length-1))
-  for j=0L, x_0.length-2 do begin
-    x_vert = [x_0[j],x_0[j+1],x_1[j+1],x_1[j],x_0[j]]
-    y_vert = [y_0[j],y_0[j+1],y_1[j+1],y_1[j],y_0[j]]
-    plots, x_vert, y_vert, color=color[j]
-    ;stop
-  endfor
-  
+  ; positive rotation
   i=1L
   y_v=0
   while y_v le lat_min do begin
@@ -163,31 +146,17 @@ function km_grid_guvi, $
     sp_ru = cv_coord(from_rect=r_ct_u, /to_sphere,/degree)
     sp_rl = cv_coord(from_rect=r_ct_l, /to_sphere,/degree)
 
-    lon_u.Add, reform(sp_ru[1,*])
-    lat_u.Add, reform(sp_ru[0,*])
+    lon_u.Add, reform(sp_ru[0,*])
+    lat_u.Add, reform(sp_ru[1,*])
     
-    lat_l.Add, reform(sp_rl[1,*])
     lon_l.Add, reform(sp_rl[0,*])
+    lat_l.Add, reform(sp_rl[1,*])
     
     y_v = max(abs((90-sp_ru[1,*])*sin(sp_ru[0,*]*!dtor)))
-    print, y_v, i
     i = i+1
-    
-    x_0 = (90-sp_ru[1,*])*cos(sp_ru[0,*]*!dtor)
-    y_0 = (90-sp_ru[1,*])*sin(sp_ru[0,*]*!dtor)
-    
-    x_1 = (90-sp_rl[1,*])*cos(sp_rl[0,*]*!dtor)
-    y_1 = (90-sp_rl[1,*])*sin(sp_rl[0,*]*!dtor)
-    
-    color=bytscl(indgen(x_0.length-1))
-    for j=0L, y_1.length-2 do begin
-      x_vert = [x_0[j],x_0[j+1],x_1[j+1],x_1[j],x_0[j]]
-      y_vert = [y_0[j],y_0[j+1],y_1[j+1],y_1[j],y_0[j]]
-      plots, x_vert, y_vert, color=color[j]
-      ;stop
-    endfor
   endwhile
   
+  ; negative rotation
   i=1L
   y_v=0
   while y_v le lat_min do begin
@@ -217,43 +186,74 @@ function km_grid_guvi, $
     sp_ru = cv_coord(from_rect=r_ct_u, /to_sphere,/degree)
     sp_rl = cv_coord(from_rect=r_ct_l, /to_sphere,/degree)
 
-    lon_u.Add, reform(sp_ru[1,*])
-    lat_u.Add, reform(sp_ru[0,*])
+    lon_u.Add, reform(sp_ru[0,*])
+    lat_u.Add, reform(sp_ru[1,*])
 
-    lat_l.Add, reform(sp_rl[1,*])
     lon_l.Add, reform(sp_rl[0,*])
+    lat_l.Add, reform(sp_rl[1,*])
+    
 
     y_v = max(abs((90-sp_ru[1,*])*sin(sp_ru[0,*]*!dtor)))
-    print, y_v, i
     i = i+1
-
-    x_0 = (90-sp_ru[1,*])*cos(sp_ru[0,*]*!dtor)
-    y_0 = (90-sp_ru[1,*])*sin(sp_ru[0,*]*!dtor)
-
-    x_1 = (90-sp_rl[1,*])*cos(sp_rl[0,*]*!dtor)
-    y_1 = (90-sp_rl[1,*])*sin(sp_rl[0,*]*!dtor)
-
-    color=bytscl(indgen(x_0.length-1))
-    for j=0L, y_1.length-2 do begin
-      x_vert = [x_0[j],x_0[j+1],x_1[j+1],x_1[j],x_0[j]]
-      y_vert = [y_0[j],y_0[j+1],y_1[j+1],y_1[j],y_0[j]]
-      plots, x_vert, y_vert, color=color[j]
-      ;stop
-    endfor
   endwhile
   
-  stop
+  desccription = 'Created by using a spacecraft at a specific height,' + $
+                 'and a provided FOV width of a slit (photometer like) experiment.' + $
+                 'The FOV is then rotated about the x-axis in the SC frame to simulate' + $
+                 'slit movement. The FOV is then translate to an auroral height to provide' + $
+                 'a full simulated FOV.'
   
+  lat_u = lat_u.ToArray()
+  lat_d = lat_l.ToArray()
+  lon_u = lon_u.ToArray()
+  lon_d = lon_l.ToArray()
   
+  bd_lon = where(lon_u lt 0, cc)
+  if cc gt 0 then lon_u[bd_lon] = 360+lon_u[bd_lon]
+  bd_lon = where(lon_d lt 0, cc)
+  if cc gt 0 then lon_d[bd_lon] = 360+lon_d[bd_lon]
   
+  f_gr = {name:'Lat/Lon Grid for binning IMAGE data', $
+    description:desccription, $
+    lat_up:lat_u, lat_dn:lat_d, $
+    lon_up:lon_u, lon_dn:lon_d, $
+    fov:fov_a, pix:pix_a, sar_r:st_l, h_aurora:hgt, re:re}
+
+ 
   
+  ; plot the grid
+  if keyword_set(plot_grid) then begin
+    if not keyword_set(overplot) then begin
+      loadct, 0, /silent
+      window, /free
+      plot, [-1*lat_min, lat_min], [-1*lat_min, lat_min], /isotropic, /nodata
+    endif
+    
+    for i=0L, n_elements(f_gr.lat_up[*,0])-1 do begin
+      x_u = reform((90-f_gr.lat_up[i,*])*cos(f_gr.lon_up[i,*]*!dtor))
+      y_u = reform((90-f_gr.lat_up[i,*])*sin(f_gr.lon_up[i,*]*!dtor))
+      
+      x_d = reform((90-f_gr.lat_dn[i,*])*cos(f_gr.lon_dn[i,*]*!dtor))
+      y_d = reform((90-f_gr.lat_dn[i,*])*sin(f_gr.lon_dn[i,*]*!dtor))
+
+      for j=0L, x_u.length-2 do begin
+        x_vert = [x_u[j], x_u[j+1], x_d[j+1], x_d[j], x_u[j]]
+        y_vert = [y_u[j], y_u[j+1], y_d[j+1], y_d[j], y_u[j]]
+
+        plots, x_vert, y_vert, noclip=0
+      endfor
+    endfor
+  endif
+ 
+
+  return, f_gr
 end
 
 
 ; main
 ; testing
 
-a = km_grid_guvi(colat_min=20)
+a = km_grid_guvi(colat_min=20, /plot_grid)
 
 
 end
