@@ -6,14 +6,9 @@ function image_bin_ll, $
   mag = mag, $ ; use geomagnetic coordinates
   geo = geo, $ ; use geographic coordinates
   mlt = mlt, $ ; use mlt and magnetic latitude
-  hgt = hgt, $ ; height of the aurora
-  im_min = im_min, $ ; min intensity to plot
-  im_max = im_max, $ ; max intensity to plot
-  ns_scl = ns_scl, $ ; scale data to the night side
-  im_plot = im_plot, $ ; plot the image
-  clog = clog, $ ; log before plotting
-  save_png = save_png, $ ; output png
-  out_dir = out_dir ; 
+  hgt = hgt ; height of the aurora
+
+
   
   
   if keyword_set(lat_res) then lat_res=lat_res else lat_res=1.
@@ -23,14 +18,6 @@ function image_bin_ll, $
   if keyword_set(geo) then geo = 1 else geo = 0
   if keyword_set(mlt) then mlt = 1 else mlt = 0
   if keyword_set(hgt) then hgt=hgt else hgt=110
-  if keyword_set(im_plot) then im_plot=1 else im_plot=0 
-  if keyword_set(clog) then clog=1 else clog=0
-  if keyword_set(save_png) then save_png=1 else save_png=0
-  if keyword_set(out_dir) then out_dir=out_dir else out_dir='D:\data\IMAGE_FUV\plots\'
-
-  
-  if keyword_set(wf) then wf=wf else wf=0.05
-  if keyword_set(cw) then cw=cw else cw=0.03
   
   ;open file
   restore, fn
@@ -152,15 +139,6 @@ function image_bin_ll, $
   endif else begin
     ns_min = im_min
     ns_max = im_max
-  endelse
-  
-  
-  if keyword_set(ns_scl) then begin
-    plot_min=ns_min
-    plot_max=ns_max
-  endif else begin
-    plot_min=im_min
-    plot_max=im_max
   endelse
 
   return, {name:'lat/lon binned image', coordinate:coord, colat_min:lat_min, $
