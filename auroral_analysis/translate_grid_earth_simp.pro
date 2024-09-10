@@ -71,10 +71,19 @@ function translate_grid_earth_simp, lat, lon_u, lon_d, tr_sp=tr_sp
     y_max = max(abs(y_dt))
   endwhile
   
+  
+  lon_ur = lon_ur.ToArray()
+  lon_dr = lon_dr.ToArray()
+
+  bd = where(lon_ur lt 0, c)
+  if c gt 0 then lon_ur[bd] = 360+lon_ur[bd]
+  bd = where(lon_dr lt 0, c)
+  if c gt 0 then lon_dr[bd] = 360+lon_dr[bd]
+  
   r_str = {name:'Lat/Lon Grid for binning IMAGE data', $
     description:'Created by translating an initial grid up or down', $
     lat_up:lat_ur.ToArray(), lat_dn:lat_dr.ToArray(), $
-    lon_up:lon_ur.ToArray(), lon_dn:lon_dr.ToArray(), $
+    lon_up:lon_ur, lon_dn:lon_dr, $
     tr_sp:tr_sp}
 
   return, r_str
