@@ -29,16 +29,18 @@ FUNCTION pts_inside, x, y, px, py, Index=index
   i  = Indgen(N,/Long)                            ; indices 0...N-1
   ip = Indgen(N,/Long) + 1                        ; indices 1...N
 
-  nn = N_Elements(x)
+  npt = N_Elements(x)
+
 ;  X1 = tmp_px(i)  # Replicate(1,nn) - Replicate(1,n) # Reform([x],nn)
 ;  Y1 = tmp_py(i)  # Replicate(1,nn) - Replicate(1,n) # Reform([y],nn)
 ;  X2 = tmp_px(ip) # Replicate(1,nn) - Replicate(1,n) # Reform([x],nn)
 ;  Y2 = tmp_py(ip) # Replicate(1,nn) - Replicate(1,n) # Reform([y],nn)
 
-  X1 = matrix_multiply(tmp_px(i), Replicate(1,nn)) - matrix_multiply(Replicate(1,n), Reform([x],nn))
-  Y1 = matrix_multiply(tmp_py(i), Replicate(1,nn)) - matrix_multiply(Replicate(1,n), Reform([y],nn))
-  X2 = matrix_multiply(tmp_px(ip), Replicate(1,nn)) - matrix_multiply(Replicate(1,n), Reform([x],nn))
-  Y2 = matrix_multiply(tmp_py(ip), Replicate(1,nn)) - matrix_multiply(Replicate(1,n), Reform([y],nn))
+  X1 = matrix_multiply(tmp_px(i), Replicate(1,npt, TPOOL_MAX_ELTS=0), TPOOL_MAX_ELTS=0) - matrix_multiply(Replicate(1,n, TPOOL_MAX_ELTS=0), Reform([x],npt), TPOOL_MAX_ELTS=0)
+  Y1 = matrix_multiply(tmp_py(i), Replicate(1,npt, TPOOL_MAX_ELTS=0), TPOOL_MAX_ELTS=0) - matrix_multiply(Replicate(1,n, TPOOL_MAX_ELTS=0), Reform([y],npt), TPOOL_MAX_ELTS=0)
+  X2 = matrix_multiply(tmp_px(ip), Replicate(1,npt, TPOOL_MAX_ELTS=0), TPOOL_MAX_ELTS=0) - matrix_multiply(Replicate(1,n, TPOOL_MAX_ELTS=0), Reform([x],npt), TPOOL_MAX_ELTS=0)
+  Y2 = matrix_multiply(tmp_py(ip), Replicate(1,npt, TPOOL_MAX_ELTS=0), TPOOL_MAX_ELTS=0) - matrix_multiply(Replicate(1,n, TPOOL_MAX_ELTS=0), Reform([y],npt), TPOOL_MAX_ELTS=0)
+
 
   dp = X2*X1 + Y1*Y2                               ; Dot-product
   cp = X1*Y2 - Y1*X2                               ; Cross-product
