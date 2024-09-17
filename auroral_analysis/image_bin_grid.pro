@@ -167,9 +167,12 @@ function image_bin_grid, $
     
     scan_x = [x_u,reverse(x_d)]
     scan_y = [y_u,reverse(y_d)]
+    
+    bd_scan = where(f_x lt min(scan_x) or f_x gt max(scan_x) $
+                 or f_y lt min(scan_y) or f_y gt max(scan_y), complement=gd_scan)
         
-    scan_pts = pts_inside(f_x, f_y, scan_x, scan_y)
-    scan_ind = where(scan_pts eq 1)
+    scan_pts = pts_inside(f_x[gd_scan], f_y[gd_scan], scan_x, scan_y)
+    scan_ind = gd_scan[where(scan_pts eq 1)]
     
     ;plots, [scan_x, scan_x[0]], [scan_y,scan_y[0]], color=143
     ;plots, f_x[scan_ind], f_y[scan_ind], color=250, psym=sym(3), symsize=0.2
@@ -200,8 +203,11 @@ function image_bin_grid, $
 
       ; calculate which points of the image pixels
       ; are within the polygon
-      in_pts = pts_inside(s_fx, s_fy, x_vert[0:-2], y_vert[0:-2], index=pts_ind) 
-      gd_pts = where(in_pts eq 1, pix_c)
+      o_st = where(s_fx lt min(x_vert) or s_fx gt max(x_vert) $
+                or s_fy lt min(y_vert) or s_fy gt max(y_vert), complment=i_st)
+      
+      in_pts = pts_inside(s_fx[i_st], s_fy[i_st], x_vert[0:-2], y_vert[0:-2], index=pts_ind) 
+      gd_pts = i_st[where(in_pts eq 1, pix_c)]
       
       ; calculate the center of polygon
       vert_c = poly_centroid(x_vert[0:-2], y_vert[0:-2])
@@ -257,7 +263,7 @@ function image_bin_grid, $
   ns_min = im_ns[im_ns.length*0.1]
   ns_max = max(im_ns,/nan)
   
-  ; convert the x-y centroid to lat/lon
+  ; convert the0.11 x-y centroid to lat/lon
   cx_lat = 90 - sqrt(im_cx^2. + im_cy^2.)
   cx_lon = atan(im_cx,im_cy)/!dtor
   bd = where(cx_lon lt 0, bc)
@@ -297,7 +303,7 @@ s2 = systime(/seconds)
 
 print,(s2-s1)/60.
 
-;image_plot, guvi_im, /no_rot, /clog, xsize=900, ysize=900, win=4
+image_plot, guvi_im, /no_rot, /clog, xsize=900, ysize=900, win=4
 ;image_plot_sav, fn, colat_min=cmin, /ns_scl, /clog
 ;image_plot, guvi_im, /clog, xsize=900, ysize=900, win=1
 
