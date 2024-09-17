@@ -247,7 +247,9 @@ end
 
 ; Main
 ; 
-; 
+; What if we have no data around midnight? 
+; need to fix this
+
 
 fn = 'D:\data\IMAGE_FUV\2001\WIC\016\wic20010161609.idl'
 fn = "D:\data\IMAGE_FUV\2001\WIC\001\wic20010010449.idl"
@@ -260,7 +262,7 @@ fn = "D:\data\IMAGE_FUV\2001\WIC\015\wic20010150809.idl"
 ; sun needs to be remobed
 
 sr = 0
-im = image_bin_ll(fn, lon_res=5)
+im = image_bin_ll(fn, lon_res=2.5)
 im_fit = image_fit_ll(im, sun_rm=sr)
 image_plot, im_fit, xsize=900, ysize=900, win=2
 

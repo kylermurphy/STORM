@@ -103,7 +103,7 @@ function translate_grid_earth, lat, lon_u, lon_d, r_map, tr_sp=tr_sp
     description:'Created by translating an initial grid up or down', $
     lat_up:lat_ur.ToArray(), lat_dn:lat_dr.ToArray(), $
     lon_up:lon_ur, lon_dn:lon_dr, $
-    tr_sp:tr_sp, h_aurora:hgt, re:re}
+    tr_sp:tr_sp}
 
   return, r_str
 

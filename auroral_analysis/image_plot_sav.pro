@@ -93,7 +93,6 @@ pro image_plot_sav, $
   
   plots, x, y, color=im_col, psym=sym(1), noclip=0, symsize=0.25
   
-  stop    
 end
 
 
@@ -101,8 +100,9 @@ end
 ; testing
 
 fn = "D:\data\IMAGE_FUV\2001\WIC\015\wic20010150809.idl"
+fn = "D:\data\IMAGE_FUV\2001\WIC\015\wic20010150809.idl"
 
-image_plot_sav,fn, ns_scl=1
+image_plot_sav,fn, ns_scl=1, /clog
 
 end
 

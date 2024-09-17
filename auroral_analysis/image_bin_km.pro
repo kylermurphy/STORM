@@ -27,7 +27,7 @@ function image_bin_km, $
   if keyword_set(cw) then cw=cw else cw=0.03
   
   
-  fixplot
+
   ct = 8
   ct = 56
   ; radius of earth
@@ -49,19 +49,19 @@ function image_bin_km, $
   bd = where(mlt_arr lt 0,c)
   if c gt 0 then mlt_arr[bd] = !values.f_nan
   
-  ; find 
-  sm=fltarr(1,3)
-  sm[0,0] = 6738.14
-  dprint,getdebug=gd
-  dprint,setdebug=-10
-  cotrans, sm, gsm, td, /SM2GSM
-  cotrans, gsm, gse, td, /GSM2GSE
-  cotrans, gse, gei, td, /GSE2GEI
-  cotrans, gei, geo, td, /GEI2GEO
-  ;restore previous verbosity
-  dprint,setdebug=gd
-  
-  sm_lon = geo[0]
+;  ; find 
+;  sm=fltarr(1,3)
+;  sm[0,0] = 6738.14
+;  dprint,getdebug=gd
+;  dprint,setdebug=-10
+;  cotrans, sm, gsm, td, /SM2GSM
+;  cotrans, gsm, gse, td, /GSM2GSE
+;  cotrans, gse, gei, td, /GSE2GEI
+;  cotrans, gei, geo, td, /GEI2GEO
+;  ;restore previous verbosity
+;  dprint,setdebug=gd
+;  
+;  sm_lon = geo[0]
   
   ; setup latitude grid
   ; using arc legnth and lat_res
@@ -199,6 +199,7 @@ function image_bin_km, $
     im_col = bytscl(im_col,/nan, min=plot_min, max=plot_max)
 
   if im_plot eq 1 then begin
+    fixplot
     window, 2, xsize = 900, ysize = 900
     !p.multi  = [0,1,1]
     !x.omargin = [15,15]
@@ -236,7 +237,7 @@ function image_bin_km, $
            lat_res:lat_res, lon_res:lon_res,  $ 
            im_flat:im_flat, lon_vert:lon_vert, lat_vert:lat_vert, mlt_pix:mlt_pix, t:ts, $
            im_max:im_max, im_min:im_min, im_pc:im_pc, ns_min:ns_min, ns_max:ns_max, $ $
-           mlt_mid:mlt_mid, mlon_mid:mlon_mid, glon_mid:glon_mid, sm_lon:sm_lon}
+           mlt_mid:mlt_mid, mlon_mid:mlon_mid, glon_mid:glon_mid}
 end
 
 

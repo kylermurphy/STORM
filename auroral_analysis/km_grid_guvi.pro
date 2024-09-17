@@ -217,7 +217,7 @@ function km_grid_guvi, $
     description:desccription, $
     lat_up:lat_u, lat_dn:lat_d, $
     lon_up:lon_u, lon_dn:lon_d, $
-    fov:fov_a, pix:pix_a, sar_r:st_l, h_aurora:hgt, re:re}
+    fov:fov_a, pix:pix_a, sat_r:st_l, h_aurora:hgt, re:re, colat_min:lat_min}
 
  
   
@@ -225,11 +225,11 @@ function km_grid_guvi, $
   if keyword_set(plot_grid) then begin
     if not keyword_set(overplot) then begin
       loadct, 0, /silent
-      window, /free
-      plot, [-1*lat_min, lat_min], [-1*lat_min, lat_min], /isotropic, /nodata
+      window, xsize = 1200, ysize = 1200, /free
+      plot, [-1*lat_min-5, lat_min+5], [-1*lat_min-5, lat_min+5], /isotropic, /nodata
     endif
     
-    for i=0L, n_elements(f_gr.lat_up[*,0])-1 do begin
+    for i=0L, n_elements(f_gr.lat_up[*,0])-1, 2 do begin
       x_u = reform((90-f_gr.lat_up[i,*])*cos(f_gr.lon_up[i,*]*!dtor))
       y_u = reform((90-f_gr.lat_up[i,*])*sin(f_gr.lon_up[i,*]*!dtor))
       
@@ -252,8 +252,8 @@ end
 
 ; main
 ; testing
-
-a = km_grid_guvi(colat_min=20, /plot_grid)
+pix_sz = 0.26*1E-3
+a = km_grid_guvi(colat_min=20, fov_a=pix_sz, pix_a=pix_sz, /plot_grid)
 
 
 end

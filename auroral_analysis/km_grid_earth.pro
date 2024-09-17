@@ -101,6 +101,7 @@ function km_grid_earth, $
     endfor
   endif
   
+  f_gr = create_struct(f_gr, 'h_aurora', hgt, 're', re, 'colat_min', colat_min)
   
   return, f_gr  
 end

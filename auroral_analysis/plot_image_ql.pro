@@ -90,7 +90,9 @@ pro plot_image_ql, $
   
   ;get mlt of of zero longitude to rotate noon to
   ; top of figure
-  im_mlt = MLTConvert_v2(yr,mt,dt,hh,mm,0,0)
+  ;im_mlt = MLTConvert_v2(yr,mt,dt,hh,mm,0,0)
+  mlt_min = min(imageinfo.mlt, min_id)
+  im_mlt = imageinfo.mlon[min_id]
   
   im  = imageinfo.image
   lat = abs(imageinfo.mlat + lat_shift)
@@ -144,7 +146,7 @@ pro plot_image_ql, $
   ; setup the plotting area
   ; im_mlt rotates the map so that noon is at the top
   loadct,0
-  map_set, 90, 0,-15*im_mlt, /azimuthal,/isotropic, limit=[lat_min,0,90,360],/noerase
+  map_set, 90, 0,-1*im_mlt, /azimuthal,/isotropic, limit=[lat_min,0,90,360],/noerase
   ; plot circles for each pixel
   loadct, ct, file = ct_file
   if keyword_set(rev_ct) then reverse_ct
@@ -164,7 +166,7 @@ pro plot_image_ql, $
   
   
   loadct,0,/silent
-  map_set, 90,0,-15*im_mlt, /azimuthal,/isotropic, limit=[lat_min,0,90,360], /noerase
+  map_set, 90,0,-1*im_mlt, /azimuthal,/isotropic, limit=[lat_min,0,90,360], /noerase
   loadct, ct, file = ct_file
   if keyword_set(rev_ct) then reverse_ct
   for i=0L, n_elements(im[0,*])-2 do begin

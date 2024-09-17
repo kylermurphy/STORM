@@ -1,5 +1,6 @@
 pro image_plot, $
     im_str, $
+    no_rot=no_rot, $ ; rotate so midnight is along the -ve y-axis
     im_max=im_max, $
     im_min=im_min, $
     ns_scl=ns_scl, $
@@ -10,6 +11,7 @@ pro image_plot, $
     
     fixplot
     
+    if keyword_set(no_rot) then no_rot=1 else no_rot=0
     if keyword_set(im_min) then im_min=im_min else im_min=im_str.ns_min
     if keyword_set(im_max) then im_max=im_max else im_max=im_str.ns_max
     if keyword_set(ns_scl) then begin
@@ -40,10 +42,14 @@ pro image_plot, $
     p_arr = [-1*r_min,r_min]
     ; rotate the plot so the -ve
     ; y-axis is is zero longitude
-    rot_t = 90
-    
+   
     r = 90-im_str.lat_vert
-    theta = im_str.lon_vert-im_str.mlon_mid 
+    theta = im_str.lon_vert
+    if no_rot eq 0 then begin
+      theta = theta-im_str.mlon_mid
+      rot_t = 90 
+    endif else rot_t = 0
+    
     ; setup the plot area
     window, win, _EXTRA=ex
     !x.margin=[5,15]
@@ -58,7 +64,7 @@ pro image_plot, $
       y = r[i,*]*sin((theta[i,*]-rot_t)*!dtor)
       
       
-      polyfill, x, y, color=im_col[i]
+      polyfill, x, y, color=im_col[i], noclip=0
     endfor
     
     p0 = convert_coord(!p.clip[0],!p.clip[1], /device, /to_normal)
@@ -86,8 +92,8 @@ end
 ; 
 
 fn = "D:\data\IMAGE_FUV\2001\WIC\015\wic20010150809.idl"
-im0 = image_bin_ll(fn, lon_res=2, colat_min=20)
-im1 = image_bin_km(fn, /ns_scl, colat_min=20) 
+im0 = image_bin_ll(fn, lon_res=2, colat_min=40)
+im1 = image_bin_km(fn, /ns_scl, colat_min=40) 
 
 image_plot,im0, xsize=900, ysize=900
 image_plot,im1, xsize=900, ysize=900, win=1
