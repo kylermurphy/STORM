@@ -204,7 +204,7 @@ function image_bin_grid, $
       ; calculate which points of the image pixels
       ; are within the polygon
       o_st = where(s_fx lt min(x_vert) or s_fx gt max(x_vert) $
-                or s_fy lt min(y_vert) or s_fy gt max(y_vert), complment=i_st)
+                or s_fy lt min(y_vert) or s_fy gt max(y_vert), complement=i_st)
       
       in_pts = pts_inside(s_fx[i_st], s_fy[i_st], x_vert[0:-2], y_vert[0:-2], index=pts_ind) 
       gd_pts = i_st[where(in_pts eq 1, pix_c)]
