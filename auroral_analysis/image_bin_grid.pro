@@ -170,6 +170,7 @@ function image_bin_grid, $
     
     bd_scan = where(f_x lt min(scan_x) or f_x gt max(scan_x) $
                  or f_y lt min(scan_y) or f_y gt max(scan_y), complement=gd_scan)
+                 
         
     scan_pts = pts_inside(f_x[gd_scan], f_y[gd_scan], scan_x, scan_y)
     scan_ind = gd_scan[where(scan_pts eq 1)]
@@ -296,9 +297,9 @@ guvi_grid = km_grid_guvi(colat_min=cmin, fov_a=pix_sz, pix_a=pix_sz)
 ;earth_grid = km_grid_earth(100, colat_min=c_min, translate=1)
 
 s1 = systime(/seconds)
-Profiler, /SYSTEM & Profiler
+;Profiler, /SYSTEM & Profiler
 guvi_im = image_bin_grid(fn, guvi_grid,/sun_rot)
-Profiler, /REPORT
+;Profiler, /REPORT
 s2 = systime(/seconds)
 
 print,(s2-s1)/60.
