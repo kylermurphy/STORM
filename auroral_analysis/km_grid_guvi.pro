@@ -240,7 +240,7 @@ function km_grid_guvi, $
         x_vert = [x_u[j], x_u[j+1], x_d[j+1], x_d[j], x_u[j]]
         y_vert = [y_u[j], y_u[j+1], y_d[j+1], y_d[j], y_u[j]]
 
-        plots, x_vert, y_vert, noclip=0
+        plots, x_vert, y_vert;, noclip=0
       endfor
     endfor
   endif
