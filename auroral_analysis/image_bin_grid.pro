@@ -265,7 +265,7 @@ function image_bin_grid, $
   
   ; convert the0.11 x-y centroid to lat/lon
   cx_lat = 90 - sqrt(im_cx^2. + im_cy^2.)
-  cx_lon = atan(im_cx,im_cy)/!dtor
+  cx_lon = atan(im_cy,im_cx)/!dtor
   bd = where(cx_lon lt 0, bc)
   if bc gt 0 then cx_lon[bd] = 360+cx_lon[bd]
   
