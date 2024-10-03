@@ -146,7 +146,7 @@ function image_fit_ll, $
 
     gd_fit = where(finite(mn_fit) eq 1)
     if max(lat_fit[gd_fit],min=mm,/nan)-mm lt 20 then continue
-    g_f = gaussfit(lat_fit[gd_fit],mn_fit[gd_fit], g_c, $
+    g_f = gaussfit_ex(lat_fit[gd_fit],mn_fit[gd_fit], g_c, $
       chisq=chisq, nterms=5, estimates=g_old, status=stat, sigma=ss)
 
     if stat ne 0 then continue

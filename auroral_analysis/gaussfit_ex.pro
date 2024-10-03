@@ -192,7 +192,7 @@ END
 ;       convert back to single precision if inputs were single precision.
 ;-
 ;
-Function Gaussfit, xIn, yIn, a, $
+Function Gaussfit_ex, xIn, yIn, a, $
     CHISQ=chisq, $
     ESTIMATES = est, $
     MEASURE_ERRORS=measureErrors, $
