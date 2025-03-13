@@ -30,8 +30,8 @@ pro grid_out
     printf, outlun, i, format='("Scan: " (I03))'
     printf, outlun, guvi_grid.lat_up[i,*], format='("Lat Upper: " 211(" ",F0.4,","))'
     printf, outlun, guvi_grid.lon_up[i,*], format='("Lon Upper: " 211(" ",F0.4,","))'
-    printf, outlun, guvi_grid.lat_dn[i,*], format='("Lat Upper: " 211(" ",F0.4,","))'
-    printf, outlun, guvi_grid.lon_dn[i,*], format='("Lon Upper: " 211(" ",F0.4,","))'
+    printf, outlun, guvi_grid.lat_dn[i,*], format='("Lat Down: " 211(" ",F0.4,","))'
+    printf, outlun, guvi_grid.lon_dn[i,*], format='("Lon Down: " 211(" ",F0.4,","))'
     
     x_u = reform((90-guvi_grid.lat_up[i,*])*cos(guvi_grid.lon_up[i,*]*!dtor))
     y_u = reform((90-guvi_grid.lat_up[i,*])*sin(guvi_grid.lon_up[i,*]*!dtor))
