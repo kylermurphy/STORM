@@ -16,6 +16,8 @@ pro process_image, $
   ; create a grid for a guvi like insturment
   guvi_grid = km_grid_guvi(_EXTRA=ex)
   
+  stop
+  
   t0 = systime(/seconds)
   ;loop through files and bin the images
   for i=1l, fn.length-1 do begin

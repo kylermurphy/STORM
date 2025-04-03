@@ -202,6 +202,7 @@ function km_grid_guvi, $
                  'The FOV is then rotated about the x-axis in the SC frame to simulate' + $
                  'slit movement. The FOV is then translate to an auroral height to provide' + $
                  'a full simulated FOV.'
+  stop
   
   lat_u = lat_u.ToArray()
   lat_d = lat_l.ToArray()
@@ -253,7 +254,7 @@ end
 ; main
 ; testing
 pix_sz = 0.26*1E-3
-a = km_grid_guvi(colat_min=20, fov_a=pix_sz, pix_a=pix_sz, /plot_grid)
+a = km_grid_guvi(colat_min=45, fov_a=pix_sz, pix_a=pix_sz, /plot_grid)
 
 
 end
